@@ -45,27 +45,12 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
 
-// Mock team data
-const mockTeamMembers = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    role: 'Editor',
-    status: 'active',
-    joinedAt: '2024-01-15',
-  },
-  {
-    id: 2,
-    name: 'Mike Chen',
-    email: 'mike@example.com',
-    role: 'Viewer',
-    status: 'pending',
-    joinedAt: '2024-01-10',
-  },
-];
+// Data fetcher
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
@@ -73,12 +58,14 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [teamMembers, setTeamMembers] = useState(mockTeamMembers);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const isRTL = i18n.language === 'ar';
+
+  // Fetch team data
+  const { data: teamMembers, mutate: mutateTeam } = useSWR('/users/team', fetcher);
 
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || '',
@@ -110,50 +97,70 @@ export default function SettingsPage() {
   };
 
   const handleProfileUpdate = () => {
-    // Mock API call
-    toast.success('Profile updated successfully');
+    try {
+      api.put('/users/update', {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        email: profileData.email,
+      });
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      toast.error('Failed to update profile');
+    }
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (profileData.newPassword !== profileData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
-    // Mock API call
-    toast.success('Password updated successfully');
-    setProfileData(prev => ({
-      ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    }));
+    
+    try {
+      await api.post('/users/change-password', {
+        currentPassword: profileData.currentPassword,
+        newPassword: profileData.newPassword,
+      });
+      toast.success('Password updated successfully');
+      setProfileData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+    } catch (error) {
+      toast.error('Failed to update password');
+    }
   };
 
-  const handleInviteTeamMember = () => {
+  const handleInviteTeamMember = async () => {
     if (!inviteEmail) {
       toast.error('Please enter an email address');
       return;
     }
 
-    const newMember = {
-      id: Date.now(),
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail,
-      role: inviteRole,
-      status: 'pending' as const,
-      joinedAt: new Date().toISOString().split('T')[0],
-    };
-
-    setTeamMembers([...teamMembers, newMember]);
-    setInviteEmail('');
-    setInviteRole('viewer');
-    setIsInviteDialogOpen(false);
-    toast.success('Team member invited successfully');
+    try {
+      await api.post('/users/invite', {
+        email: inviteEmail,
+        role: inviteRole,
+      });
+      mutateTeam(); // Refresh team list
+      setInviteEmail('');
+      setInviteRole('viewer');
+      setIsInviteDialogOpen(false);
+      toast.success('Team member invited successfully');
+    } catch (error) {
+      toast.error('Failed to invite team member');
+    }
   };
 
-  const handleRemoveTeamMember = (id: number) => {
-    setTeamMembers(teamMembers.filter(member => member.id !== id));
-    toast.success('Team member removed');
+  const handleRemoveTeamMember = async (id: number) => {
+    try {
+      await api.delete(`/users/team/${id}`);
+      mutateTeam(); // Refresh team list
+      toast.success('Team member removed');
+    } catch (error) {
+      toast.error('Failed to remove team member');
+    }
   };
 
   return (
@@ -402,7 +409,7 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Team Members */}
-                    {teamMembers.map((member) => (
+                    {(teamMembers || []).map((member: any) => (
                       <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center">

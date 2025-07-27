@@ -51,82 +51,51 @@ import {
   Calendar,
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
+import toast from 'react-hot-toast';
 
-// Mock data
-const mockUsers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    plan: 'Growth',
-    status: 'active',
-    joinedAt: '2024-01-15',
-    lastLogin: '2024-01-07',
-    revenue: 59,
-  },
-  {
-    id: 2,
-    name: 'Sarah Johnson',
-    email: 'sarah@company.com',
-    plan: 'Pro Agency',
-    status: 'active',
-    joinedAt: '2023-12-10',
-    lastLogin: '2024-01-06',
-    revenue: 149,
-  },
-  {
-    id: 3,
-    name: 'Mike Chen',
-    email: 'mike@startup.io',
-    plan: 'Starter',
-    status: 'suspended',
-    joinedAt: '2024-01-01',
-    lastLogin: '2024-01-03',
-    revenue: 29,
-  },
-];
-
-const mockRevenueData = [
-  { month: 'Sep', revenue: 12400 },
-  { month: 'Oct', revenue: 15200 },
-  { month: 'Nov', revenue: 18300 },
-  { month: 'Dec', revenue: 22100 },
-  { month: 'Jan', revenue: 25800 },
-];
-
-const mockSystemHealth = {
-  server: { status: 'healthy', uptime: '99.9%', load: '23%' },
-  database: { status: 'healthy', connections: '47/100', size: '2.3GB' },
-  queue: { status: 'healthy', pending: 12, failed: 0 },
-  scraper: { status: 'warning', active: 8, errors: 3 },
-};
+// Data fetcher
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function AdminPage() {
   const { t, i18n } = useTranslation();
-  const [users, setUsers] = useState(mockUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserDialog, setShowUserDialog] = useState(false);
 
   const isRTL = i18n.language === 'ar';
 
-  const filteredUsers = users.filter(user =>
+  // Fetch admin data
+  const { data: users, mutate: mutateUsers } = useSWR('/admin/users', fetcher);
+  const { data: adminStats } = useSWR('/admin/stats', fetcher);
+  const { data: revenueData } = useSWR('/admin/revenue', fetcher);
+  const { data: systemHealth } = useSWR('/admin/system-health', fetcher);
+
+  const filteredUsers = users?.filter((user: any) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) || [];
 
-  const handleUserAction = (userId: number, action: 'suspend' | 'activate' | 'view') => {
+  const handleUserAction = async (userId: number, action: 'suspend' | 'activate' | 'view') => {
     if (action === 'view') {
-      const user = users.find(u => u.id === userId);
+      const user = users.find((u: any) => u.id === userId);
       setSelectedUser(user);
       setShowUserDialog(true);
       return;
     }
 
-    const newStatus = action === 'suspend' ? 'suspended' : 'active';
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, status: newStatus } : user
-    ));
+    try {
+      if (action === 'suspend') {
+        await api.put(`/admin/users/${userId}/suspend`);
+      } else {
+        await api.put(`/admin/users/${userId}/reactivate`);
+      }
+      mutateUsers(); // Refresh users list
+      toast.success(`User ${action}d successfully`);
+    } catch (error) {
+      toast.error(`Failed to ${action} user`);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -155,6 +124,25 @@ export default function AdminPage() {
     }
   };
 
+  if (!users || !adminStats) {
+    return (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main className="container mx-auto px-4 py-8">
+            <div className="space-y-8">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute allowedRoles={['admin']}>
       <div className="min-h-screen bg-background">
@@ -181,10 +169,10 @@ export default function AdminPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">1,247</div>
+                <div className="text-2xl font-bold">{adminStats?.totalUsers || 0}</div>
                 <p className="text-xs text-muted-foreground">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +12% from last month
+                  {adminStats?.usersChange > 0 ? '+' : ''}{adminStats?.usersChange || 0}% from last month
                 </p>
               </CardContent>
             </Card>
@@ -197,10 +185,10 @@ export default function AdminPage() {
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">892</div>
+                <div className="text-2xl font-bold">{adminStats?.activeSubscriptions || 0}</div>
                 <p className="text-xs text-muted-foreground">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +8% from last month
+                  {adminStats?.subscriptionsChange > 0 ? '+' : ''}{adminStats?.subscriptionsChange || 0}% from last month
                 </p>
               </CardContent>
             </Card>
@@ -213,10 +201,10 @@ export default function AdminPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$25,800</div>
+                <div className="text-2xl font-bold">${adminStats?.monthlyRevenue || 0}</div>
                 <p className="text-xs text-muted-foreground">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +23% from last month
+                  {adminStats?.revenueChange > 0 ? '+' : ''}{adminStats?.revenueChange || 0}% from last month
                 </p>
               </CardContent>
             </Card>
@@ -250,7 +238,7 @@ export default function AdminPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={mockRevenueData}>
+                      <BarChart data={revenueData || []}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="month" className="text-xs fill-muted-foreground" />
                         <YAxis className="text-xs fill-muted-foreground" />
@@ -281,49 +269,49 @@ export default function AdminPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {getHealthStatus(mockSystemHealth.server.status)}
+                    {getHealthStatus(systemHealth?.server?.status || 'unknown')}
                     <span className={`text-sm font-medium ${isRTL ? 'mr-2' : 'ml-2'}`}>
                       {t('admin.serverHealth')}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {mockSystemHealth.server.uptime}
+                    {systemHealth?.server?.uptime || 'N/A'}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {getHealthStatus(mockSystemHealth.database.status)}
+                    {getHealthStatus(systemHealth?.database?.status || 'unknown')}
                     <span className={`text-sm font-medium ${isRTL ? 'mr-2' : 'ml-2'}`}>
                       Database
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {mockSystemHealth.database.connections}
+                    {systemHealth?.database?.connections || 'N/A'}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {getHealthStatus(mockSystemHealth.queue.status)}
+                    {getHealthStatus(systemHealth?.queue?.status || 'unknown')}
                     <span className={`text-sm font-medium ${isRTL ? 'mr-2' : 'ml-2'}`}>
                       {t('admin.queueStatus')}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {mockSystemHealth.queue.pending} pending
+                    {systemHealth?.queue?.pending || 0} pending
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {getHealthStatus(mockSystemHealth.scraper.status)}
+                    {getHealthStatus(systemHealth?.scraper?.status || 'unknown')}
                     <span className={`text-sm font-medium ${isRTL ? 'mr-2' : 'ml-2'}`}>
                       Scrapers
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {mockSystemHealth.scraper.active} active
+                    {systemHealth?.scraper?.active || 0} active
                   </span>
                 </div>
               </CardContent>
@@ -364,13 +352,13 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {(filteredUsers || []).map((user: any) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback>
-                              {user.name.split(' ').map(n => n[0]).join('')}
+                              {user.name.split(' ').map((n: string) => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <div>
