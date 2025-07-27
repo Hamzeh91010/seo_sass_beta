@@ -4,7 +4,6 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/hooks/use-auth';
-import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
 import '@/lib/i18n';
 import { Toaster } from 'react-hot-toast';
