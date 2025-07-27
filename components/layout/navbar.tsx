@@ -40,7 +40,6 @@ import {
   X,
   LayoutDashboard,
   FolderOpen,
-  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -199,11 +198,6 @@ export default function Navbar() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Feedback Button */}
-          <Button variant="ghost" size="sm">
-            <MessageSquare className="h-4 w-4" />
-          </Button>
 
           {/* User Menu */}
           <DropdownMenu>
