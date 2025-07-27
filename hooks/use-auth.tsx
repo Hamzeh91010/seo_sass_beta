@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { api } from '@/lib/api';
+import { getToken, setToken, removeToken } from '@/lib/auth';
+import toast from 'react-hot-toast';
 
 interface User {
   id: string;
@@ -39,104 +42,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing auth token
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
+    // Check for existing auth token and fetch user data
+    const token = getToken();
     
-    if (token && userData) {
+    if (token) {
       try {
-        setUser(JSON.parse(userData));
+        // Fetch current user data from API
+        api.get('/users/me').then(response => {
+          setUser(response.data);
+          setLoading(false);
+        }).catch(() => {
+          removeToken();
+          setLoading(false);
+        });
       } catch (error) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
+        removeToken();
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      // Mock API call - replace with actual API
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) throw new Error('Login failed');
-
-      const data = await response.json();
+      const response = await api.post('/auth/login', { email, password });
+      const { access_token, user } = response.data;
       
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('user_data', JSON.stringify(data.user));
-      setUser(data.user);
+      setToken(access_token);
+      setUser(user);
     } catch (error) {
-      // For demo purposes, simulate login
-      const mockUser: User = {
-        id: '1',
-        email,
-        firstName: 'John',
-        lastName: 'Doe',
-        role: email.includes('admin') ? 'admin' : 'user',
-        subscription: {
-          plan: 'growth',
-          status: 'active',
-          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      };
-      
-      localStorage.setItem('auth_token', 'mock_token');
-      localStorage.setItem('user_data', JSON.stringify(mockUser));
-      setUser(mockUser);
+      throw error;
     }
   };
 
   const register = async (data: RegisterData) => {
     try {
-      // Mock API call - replace with actual API
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) throw new Error('Registration failed');
-
-      const result = await response.json();
+      const response = await api.post('/auth/register', data);
+      const { access_token, user } = response.data;
       
-      localStorage.setItem('auth_token', result.token);
-      localStorage.setItem('user_data', JSON.stringify(result.user));
-      setUser(result.user);
+      setToken(access_token);
+      setUser(user);
     } catch (error) {
-      // For demo purposes, simulate registration
-      const mockUser: User = {
-        id: '1',
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: 'user',
-        subscription: {
-          plan: 'starter',
-          status: 'trial',
-          trialEndsAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      };
-      
-      localStorage.setItem('auth_token', 'mock_token');
-      localStorage.setItem('user_data', JSON.stringify(mockUser));
-      setUser(mockUser);
+      throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
+    removeToken();
     setUser(null);
   };
 
   const resetPassword = async (email: string) => {
-    // Mock API call - replace with actual API
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      await api.post('/auth/reset-password', { email });
+    } catch (error) {
+      throw error;
+    }
   };
 
   return (

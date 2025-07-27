@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { hasRole } from '@/lib/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,7 +22,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     }
 
     if (!loading && user && allowedRoles && !allowedRoles.includes(user.role)) {
-      router.push('/dashboard');
+      // Check if user has required role
+      const hasRequiredRole = allowedRoles.some(role => hasRole(user, role));
+      if (!hasRequiredRole) {
+        router.push('/dashboard');
+      }
       return;
     }
   }, [user, loading, isAuthenticated, router, allowedRoles]);
@@ -43,7 +48,10 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return null;
+    const hasRequiredRole = allowedRoles.some(role => hasRole(user, role));
+    if (!hasRequiredRole) {
+      return null;
+    }
   }
 
   return <>{children}</>;

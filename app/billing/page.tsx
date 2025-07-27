@@ -35,103 +35,11 @@ import {
   Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
 
-// Mock data
-const mockBillingHistory = [
-  {
-    id: 1,
-    date: '2024-01-01',
-    amount: 59.00,
-    status: 'paid',
-    plan: 'Growth',
-    invoice: 'INV-2024-001',
-  },
-  {
-    id: 2,
-    date: '2023-12-01',
-    amount: 59.00,
-    status: 'paid',
-    plan: 'Growth',
-    invoice: 'INV-2023-012',
-  },
-  {
-    id: 3,
-    date: '2023-11-01',
-    amount: 29.00,
-    status: 'paid',
-    plan: 'Starter',
-    invoice: 'INV-2023-011',
-  },
-];
-
-const plans = [
-  {
-    name: 'Starter',
-    price: { monthly: 29, yearly: 290 },
-    description: 'Perfect for small websites',
-    features: [
-      '1 Project',
-      '300 Tracked Keywords',
-      '10 SEO Audits/Month',
-      'Google Tracking Only',
-      'Basic Reports',
-      'Email Support',
-    ],
-    limitations: ['No Backlink Analysis', 'No Team Collaboration', 'Limited History'],
-    recommended: false,
-  },
-  {
-    name: 'Growth',
-    price: { monthly: 59, yearly: 590 },
-    description: 'Great for growing businesses',
-    features: [
-      '8 Projects',
-      '800 Tracked Keywords',
-      '25 SEO Audits/Month',
-      'Google + Bing Tracking',
-      'Custom Reports',
-      'Team Collaboration (3 members)',
-      'Priority Support',
-    ],
-    limitations: ['Basic Backlink Analysis'],
-    recommended: true,
-  },
-  {
-    name: 'Pro Agency',
-    price: { monthly: 149, yearly: 1490 },
-    description: 'For agencies and large sites',
-    features: [
-      '30 Projects',
-      '3,000 Tracked Keywords',
-      '100 SEO Audits/Month',
-      'All Search Engines',
-      'White-label Reports',
-      'Full Backlink Analysis',
-      'Team Collaboration (10 members)',
-      'API Access',
-      'Priority Support',
-    ],
-    limitations: [],
-    recommended: false,
-  },
-  {
-    name: 'Enterprise',
-    price: { monthly: 'Custom', yearly: 'Custom' },
-    description: 'Custom solutions for enterprises',
-    features: [
-      'Unlimited Projects',
-      '10,000+ Keywords',
-      'Unlimited Audits',
-      'All Features',
-      'Custom Integrations',
-      'Dedicated Support',
-      'SLA Guarantee',
-      'Training & Onboarding',
-    ],
-    limitations: [],
-    recommended: false,
-  },
-];
+// Data fetcher
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function BillingPage() {
   const { t, i18n } = useTranslation();
@@ -141,23 +49,41 @@ export default function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
 
   const isRTL = i18n.language === 'ar';
-  const currentPlan = user?.subscription?.plan || 'starter';
+
+  // Fetch billing data
+  const { data: billingData } = useSWR('/billing/status', fetcher);
+  const { data: plans } = useSWR('/billing/plans', fetcher);
+  const { data: billingHistory } = useSWR('/billing/history', fetcher);
+
+  const currentPlan = billingData?.currentPlan || 'starter';
 
   const handleUpgrade = (planName: string) => {
     setSelectedPlan(planName);
     setShowUpgradeDialog(true);
   };
 
-  const handleStripePayment = () => {
-    // Mock Stripe integration
-    toast.success('Redirecting to Stripe...');
-    setShowUpgradeDialog(false);
+  const handleStripePayment = async () => {
+    try {
+      const response = await api.post('/billing/checkout/stripe', {
+        plan: selectedPlan,
+        cycle: billingCycle,
+      });
+      window.location.href = response.data.checkout_url;
+    } catch (error) {
+      toast.error('Failed to create checkout session');
+    }
   };
 
-  const handleMyFatoorahPayment = () => {
-    // Mock MyFatoorah integration
-    toast.success('Redirecting to MyFatoorah...');
-    setShowUpgradeDialog(false);
+  const handleMyFatoorahPayment = async () => {
+    try {
+      const response = await api.post('/billing/checkout/myfatoorah', {
+        plan: selectedPlan,
+        cycle: billingCycle,
+      });
+      window.location.href = response.data.payment_url;
+    } catch (error) {
+      toast.error('Failed to create payment session');
+    }
   };
 
   const handleContactSales = () => {
@@ -204,22 +130,12 @@ export default function BillingPage() {
                 <div>
                   <h4 className="font-medium mb-3">Plan Features</h4>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-sm">8 Projects</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-sm">800 Keywords</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-sm">25 Audits/Month</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-sm">3 Team Members</span>
-                    </div>
+                    {billingData?.currentPlanFeatures?.map((feature: string, index: number) => (
+                      <div key={index} className="flex items-center">
+                        <Check className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -230,23 +146,23 @@ export default function BillingPage() {
                     <div>
                       <div className="flex justify-between text-sm mb-2">
                         <span>Projects</span>
-                        <span>5 / 8</span>
+                        <span>{billingData?.usage?.projects || 0} / {billingData?.limits?.projects || 0}</span>
                       </div>
-                      <Progress value={62} className="h-2" />
+                      <Progress value={billingData?.usage?.projects ? (billingData.usage.projects / billingData.limits.projects) * 100 : 0} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-2">
                         <span>Keywords</span>
-                        <span>432 / 800</span>
+                        <span>{billingData?.usage?.keywords || 0} / {billingData?.limits?.keywords || 0}</span>
                       </div>
-                      <Progress value={54} className="h-2" />
+                      <Progress value={billingData?.usage?.keywords ? (billingData.usage.keywords / billingData.limits.keywords) * 100 : 0} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-2">
                         <span>Audits This Month</span>
-                        <span>12 / 25</span>
+                        <span>{billingData?.usage?.audits || 0} / {billingData?.limits?.audits || 0}</span>
                       </div>
-                      <Progress value={48} className="h-2" />
+                      <Progress value={billingData?.usage?.audits ? (billingData.usage.audits / billingData.limits.audits) * 100 : 0} className="h-2" />
                     </div>
                   </div>
                 </div>
@@ -274,8 +190,8 @@ export default function BillingPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-2xl font-bold">$59.00</p>
-                  <p className="text-sm text-muted-foreground">February 1, 2024</p>
+                  <p className="text-2xl font-bold">${billingData?.nextBilling?.amount || 0}</p>
+                  <p className="text-sm text-muted-foreground">{billingData?.nextBilling?.date || 'N/A'}</p>
                 </div>
                 
                 <Separator />
@@ -283,7 +199,7 @@ export default function BillingPage() {
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">•••• •••• •••• 4242</span>
+                    <span className="text-sm">{billingData?.paymentMethod || '•••• •••• •••• ••••'}</span>
                   </div>
                   <Button variant="outline" size="sm" className="w-full">
                     {t('billing.updatePayment')}
@@ -333,7 +249,7 @@ export default function BillingPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 lg:grid-cols-4">
-                {plans.map((plan) => (
+                {(plans || []).map((plan: any) => (
                   <Card key={plan.name} className={`relative ${plan.recommended ? 'ring-2 ring-primary shadow-lg' : ''}`}>
                     {plan.recommended && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -423,7 +339,7 @@ export default function BillingPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockBillingHistory.map((transaction) => (
+                {(billingHistory || []).map((transaction: any) => (
                   <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">

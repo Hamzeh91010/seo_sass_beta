@@ -24,36 +24,48 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import Link from 'next/link';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
 
-// Mock data
-const mockRankingData = [
-  { date: '2024-01-01', keywords: 85, avgPosition: 12.3 },
-  { date: '2024-01-02', keywords: 87, avgPosition: 11.8 },
-  { date: '2024-01-03', keywords: 92, avgPosition: 11.2 },
-  { date: '2024-01-04', keywords: 95, avgPosition: 10.7 },
-  { date: '2024-01-05', keywords: 98, avgPosition: 10.1 },
-  { date: '2024-01-06', keywords: 102, avgPosition: 9.8 },
-  { date: '2024-01-07', keywords: 105, avgPosition: 9.3 },
-];
-
-const mockRecentAudits = [
-  { id: 1, domain: 'example.com', score: 85, date: '2024-01-07', issues: 3 },
-  { id: 2, domain: 'demo-site.org', score: 92, date: '2024-01-06', issues: 1 },
-  { id: 3, domain: 'test-website.net', score: 78, date: '2024-01-05', issues: 7 },
-];
-
-const mockTopKeywords = [
-  { keyword: 'seo optimization', position: 3, change: 2, volume: 12000 },
-  { keyword: 'digital marketing', position: 5, change: -1, volume: 8500 },
-  { keyword: 'web analytics', position: 8, change: 3, volume: 6200 },
-  { keyword: 'content strategy', position: 12, change: 0, volume: 4800 },
-];
+// Data fetchers
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
 
   const isRTL = i18n.language === 'ar';
+
+  // Fetch dashboard data
+  const { data: dashboardStats, error: statsError } = useSWR('/dashboard/stats', fetcher);
+  const { data: recentAudits, error: auditsError } = useSWR('/audits/recent', fetcher);
+  const { data: topKeywords, error: keywordsError } = useSWR('/keywords/top-ranking', fetcher);
+  const { data: rankingData, error: rankingError } = useSWR('/rankings/chart-data', fetcher);
+
+  const loading = !dashboardStats || !recentAudits || !topKeywords || !rankingData;
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main className="container mx-auto px-4 py-8">
+            <div className="space-y-8">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+              <div className="grid gap-6 lg:grid-cols-3">
+                <div className="lg:col-span-2 h-80 bg-muted animate-pulse rounded-lg" />
+                <div className="h-80 bg-muted animate-pulse rounded-lg" />
+              </div>
+            </div>
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -91,10 +103,10 @@ export default function DashboardPage() {
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
+                <div className="text-2xl font-bold">{dashboardStats?.totalProjects || 0}</div>
                 <p className="text-xs text-muted-foreground">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +2 from last month
+                  {dashboardStats?.projectsChange > 0 ? '+' : ''}{dashboardStats?.projectsChange || 0} from last month
                 </p>
               </CardContent>
             </Card>
@@ -107,10 +119,10 @@ export default function DashboardPage() {
                 <Search className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">1,247</div>
+                <div className="text-2xl font-bold">{dashboardStats?.totalKeywords || 0}</div>
                 <p className="text-xs text-muted-foreground">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +15% from last week
+                  {dashboardStats?.keywordsChange > 0 ? '+' : ''}{dashboardStats?.keywordsChange || 0}% from last week
                 </p>
               </CardContent>
             </Card>
@@ -123,10 +135,10 @@ export default function DashboardPage() {
                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">47</div>
+                <div className="text-2xl font-bold">{dashboardStats?.auditsThisMonth || 0}</div>
                 <p className="text-xs text-muted-foreground">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +23% from last month
+                  {dashboardStats?.auditsChange > 0 ? '+' : ''}{dashboardStats?.auditsChange || 0}% from last month
                 </p>
               </CardContent>
             </Card>
@@ -139,9 +151,9 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">8</div>
+                <div className="text-2xl font-bold">{dashboardStats?.teamMembers || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +1 new member this week
+                  {dashboardStats?.newMembers > 0 ? `+${dashboardStats.newMembers} new member${dashboardStats.newMembers > 1 ? 's' : ''} this week` : 'No new members this week'}
                 </p>
               </CardContent>
             </Card>
@@ -160,7 +172,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={mockRankingData}>
+                      <LineChart data={rankingData || []}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis 
                           dataKey="date" 
@@ -204,22 +216,22 @@ export default function DashboardPage() {
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
                     <div className="flex-1 text-sm">
-                      <p className="font-medium">New backlink detected</p>
-                      <p className="text-muted-foreground text-xs">2 minutes ago</p>
+                      <p className="font-medium">{dashboardStats?.recentActivity?.[0]?.title || 'No recent activity'}</p>
+                      <p className="text-muted-foreground text-xs">{dashboardStats?.recentActivity?.[0]?.time || ''}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full" />
                     <div className="flex-1 text-sm">
-                      <p className="font-medium">Audit completed</p>
-                      <p className="text-muted-foreground text-xs">1 hour ago</p>
+                      <p className="font-medium">{dashboardStats?.recentActivity?.[1]?.title || 'No recent activity'}</p>
+                      <p className="text-muted-foreground text-xs">{dashboardStats?.recentActivity?.[1]?.time || ''}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-orange-500 rounded-full" />
                     <div className="flex-1 text-sm">
-                      <p className="font-medium">Keyword ranking changed</p>
-                      <p className="text-muted-foreground text-xs">3 hours ago</p>
+                      <p className="font-medium">{dashboardStats?.recentActivity?.[2]?.title || 'No recent activity'}</p>
+                      <p className="text-muted-foreground text-xs">{dashboardStats?.recentActivity?.[2]?.time || ''}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -237,23 +249,23 @@ export default function DashboardPage() {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>Keywords</span>
-                      <span>1,247 / 3,000</span>
+                      <span>{dashboardStats?.usage?.keywords || 0} / {dashboardStats?.limits?.keywords || 0}</span>
                     </div>
-                    <Progress value={42} className="h-2" />
+                    <Progress value={dashboardStats?.usage?.keywords ? (dashboardStats.usage.keywords / dashboardStats.limits.keywords) * 100 : 0} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>Audits</span>
-                      <span>47 / 100</span>
+                      <span>{dashboardStats?.usage?.audits || 0} / {dashboardStats?.limits?.audits || 0}</span>
                     </div>
-                    <Progress value={47} className="h-2" />
+                    <Progress value={dashboardStats?.usage?.audits ? (dashboardStats.usage.audits / dashboardStats.limits.audits) * 100 : 0} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>Projects</span>
-                      <span>12 / 30</span>
+                      <span>{dashboardStats?.usage?.projects || 0} / {dashboardStats?.limits?.projects || 0}</span>
                     </div>
-                    <Progress value={40} className="h-2" />
+                    <Progress value={dashboardStats?.usage?.projects ? (dashboardStats.usage.projects / dashboardStats.limits.projects) * 100 : 0} className="h-2" />
                   </div>
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/billing">
@@ -278,7 +290,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTopKeywords.map((keyword, index) => (
+                  {(topKeywords || []).map((keyword: any, index: number) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="font-medium text-sm">{keyword.keyword}</p>
@@ -316,7 +328,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockRecentAudits.map((audit) => (
+                  {(recentAudits || []).map((audit: any) => (
                     <div key={audit.id} className="flex items-center justify-between p-3 rounded-lg border">
                       <div className="flex-1">
                         <p className="font-medium text-sm">{audit.domain}</p>

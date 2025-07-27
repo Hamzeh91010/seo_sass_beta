@@ -47,57 +47,15 @@ import {
   Activity,
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
 
-// Mock data
-const mockProjects = [
-  {
-    id: 1,
-    name: 'E-commerce Store',
-    url: 'https://example-store.com',
-    description: 'Main e-commerce website optimization',
-    searchEngines: ['Google', 'Bing'],
-    targetRegion: 'US',
-    language: 'English',
-    keywords: 156,
-    avgPosition: 12.3,
-    lastAudit: '2024-01-07',
-    status: 'active',
-    change: 2.1,
-  },
-  {
-    id: 2,
-    name: 'Blog Website',
-    url: 'https://tech-blog.com',
-    description: 'Technology blog content strategy',
-    searchEngines: ['Google'],
-    targetRegion: 'UK',
-    language: 'English',
-    keywords: 89,
-    avgPosition: 8.7,
-    lastAudit: '2024-01-06',
-    status: 'active',
-    change: -1.2,
-  },
-  {
-    id: 3,
-    name: 'Corporate Site',
-    url: 'https://corporate-example.com',
-    description: 'Corporate website SEO optimization',
-    searchEngines: ['Google', 'Bing', 'Yahoo'],
-    targetRegion: 'Global',
-    language: 'English',
-    keywords: 234,
-    avgPosition: 15.8,
-    lastAudit: '2024-01-05',
-    status: 'paused',
-    change: 0.5,
-  },
-];
+// Data fetcher
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation();
-  const [projects, setProjects] = useState(mockProjects);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newProject, setNewProject] = useState({
@@ -111,45 +69,68 @@ export default function ProjectsPage() {
 
   const isRTL = i18n.language === 'ar';
 
+  // Fetch projects data
+  const { data: projects, error, mutate } = useSWR('/projects', fetcher);
+
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.url.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (!newProject.name || !newProject.url) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const project = {
-      id: Date.now(),
-      ...newProject,
-      searchEngines: [newProject.searchEngine],
-      keywords: 0,
-      avgPosition: 0,
-      lastAudit: new Date().toISOString().split('T')[0],
-      status: 'active' as const,
-      change: 0,
-    };
-
-    setProjects([...projects, project]);
-    setNewProject({
-      name: '',
-      url: '',
-      description: '',
-      searchEngine: '',
-      targetRegion: '',
-      language: '',
-    });
-    setIsCreateDialogOpen(false);
-    toast.success(t('Project created successfully!'));
+    try {
+      await api.post('/projects', {
+        ...newProject,
+        searchEngines: [newProject.searchEngine],
+      });
+      
+      mutate(); // Refresh projects list
+      setNewProject({
+        name: '',
+        url: '',
+        description: '',
+        searchEngine: '',
+        targetRegion: '',
+        language: '',
+      });
+      setIsCreateDialogOpen(false);
+      toast.success('Project created successfully!');
+    } catch (error) {
+      toast.error('Failed to create project');
+    }
   };
 
-  const handleDeleteProject = (id: number) => {
-    setProjects(projects.filter(p => p.id !== id));
-    toast.success('Project deleted successfully!');
+  const handleDeleteProject = async (id: number) => {
+    try {
+      await api.delete(`/projects/${id}`);
+      mutate(); // Refresh projects list
+      toast.success('Project deleted successfully!');
+    } catch (error) {
+      toast.error('Failed to delete project');
+    }
   };
+
+  if (!projects) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main className="container mx-auto px-4 py-8">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -297,7 +278,7 @@ export default function ProjectsPage() {
 
           {/* Projects Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
+            {(filteredProjects || []).map((project: any) => (
               <Card key={project.id} className="hover:shadow-lg transition-all duration-200 group">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
