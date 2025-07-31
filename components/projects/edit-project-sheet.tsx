@@ -542,6 +542,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                     </div>
                   )}
                 </>
+              )}
             </div>
             
             <SheetFooter className="mt-6">
