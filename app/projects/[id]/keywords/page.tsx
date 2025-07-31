@@ -170,8 +170,6 @@ export default function ProjectKeywordsPage() {
   //     </Badge>
   //   );
   // };
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editKeywordData, setEditKeywordData] = useState<KeywordCreate>({ keyword: '', tag: '' });
 
   const handleEdit = (keyword: KeywordOut) => {
     setEditingId(keyword.id);
@@ -192,10 +190,6 @@ export default function ProjectKeywordsPage() {
     } catch (error: any) {
       toast.error('Failed to update keyword');
     }
-  };
-
-  const handleEdit = (keyword: KeywordOut) => {
-    setEditingId(keyword.id);
   };
 
   if (!projectId) {
@@ -503,44 +497,6 @@ export default function ProjectKeywordsPage() {
                                     View Only
                                   </span>
                                 )}
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    </ProtectedRoute>
-  );
-}
-
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Keyword</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete the keyword "{keyword.keyword}"? 
-                                        This action cannot be undone and will remove all associated tracking data.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => handleDeleteKeyword(keyword.id, keyword.keyword)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                        Delete Keyword
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
                               </div>
                             )}
                           </TableCell>
