@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   
   // Public routes that don't require authentication
   const publicRoutes = ['/', '/pricing', '/features', '/contact', '/about'];
-  const authRoutes = ['/auth/login', '/auth/register', '/auth/reset-password', '/auth/verify'];
+  const authRoutes = ['/auth/login', '/auth/register', '/auth/reset-password', '/auth/verify-email', '/auth/verify'];
   
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.includes(pathname) || authRoutes.some(route => pathname.startsWith(route));
@@ -21,7 +21,8 @@ export function middleware(request: NextRequest) {
   }
   
   // If user is authenticated and trying to access auth routes, redirect to dashboard
-  if (token && authRoutes.some(route => pathname.startsWith(route))) {
+  if (token && authRoutes.some(route => pathname.startsWith(route)) &&
+  !pathname.startsWith('/auth/verify-email') && !pathname.startsWith('/auth/verify')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -31,9 +32,6 @@ export function middleware(request: NextRequest) {
       // Redirect to login if no token
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
-
-    // Note: We can't decode JWT here without the secret, so we'll rely on
-    // the component-level protection in the admin pages
   }
 
   return NextResponse.next();

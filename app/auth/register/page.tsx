@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { validateEmail, validatePassword, validateRequired } from '../../utils/validateCredentials';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
@@ -21,12 +22,14 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    // firstName: '',
+    // lastName: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   const isRTL = i18n.language === 'ar';
@@ -35,22 +38,43 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // if (!validateRequired(formData.firstName) || !validateRequired(formData.lastName) || !validateRequired(formData.email) || !validateRequired(formData.password)) {
+    if (!validateRequired(formData.name) || !validateRequired(formData.email) || !validateRequired(formData.password)) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!validatePassword(formData.password)) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
       return;
-    }
+    }    
+
+    setLoading(true);
 
     try {
       await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        // name: `${formData.firstName} ${formData.lastName}`,
+        name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-      toast.success(t('auth.registerSuccess'));
-      router.push('/dashboard');
+      toast.success(t('Success! Please verify your account'));
+      setSuccess(true);
+      // setTimeout(() => {
+      router.push('/auth/verify');
+      // }, 2000);
     } catch (err) {
       setError('Registration failed. Please try again.');
       toast.error('Registration failed. Please try again.');
@@ -65,6 +89,23 @@ export default function RegisterPage() {
       [e.target.name]: e.target.value,
     }));
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+              Account Created!
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Please check your email to verify your account. Redirecting to login...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950 px-4 py-8">
@@ -106,7 +147,7 @@ export default function RegisterPage() {
                 </Alert>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">{t('auth.firstName')}</Label>
                   <Input
@@ -135,6 +176,20 @@ export default function RegisterPage() {
                     dir={isRTL ? 'rtl' : 'ltr'}
                   />
                 </div>
+              </div> */}
+              <div className="space-y-2">
+                  <Label htmlFor="name">{t('auth.name')}</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="John"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11"
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                  />
               </div>
 
               <div className="space-y-2">

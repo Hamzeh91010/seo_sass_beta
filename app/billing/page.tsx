@@ -41,6 +41,13 @@ import { api } from '@/lib/api';
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
 
+const planDisplayNameMap: Record<string, string> = {
+  starter: 'Starter',
+  growth: 'Growth',
+  pro: 'Pro Agency',
+  enterprise: 'Enterprise',
+};
+
 export default function BillingPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -55,7 +62,9 @@ export default function BillingPage() {
   const { data: plans } = useSWR('/billing/plans', fetcher);
   const { data: billingHistory } = useSWR('/billing/history', fetcher);
 
-  const currentPlan = billingData?.currentPlan || 'starter';
+  const currentPlanRaw = billingData?.currentPlan || 'starter';
+  const currentPlan = planDisplayNameMap[currentPlanRaw.toLowerCase()] || 'Starter';
+
 
   const handleUpgrade = (planName: string) => {
     setSelectedPlan(planName);
@@ -64,8 +73,8 @@ export default function BillingPage() {
 
   const handleStripePayment = async () => {
     try {
-      const response = await api.post('/billing/checkout/stripe', {
-        plan: selectedPlan,
+      const response = await api.post('/stripe/checkout-sessioncreate-checkout-session', {
+        plan_id: selectedPlan,
         cycle: billingCycle,
       });
       window.location.href = response.data.checkout_url;
@@ -76,8 +85,8 @@ export default function BillingPage() {
 
   const handleMyFatoorahPayment = async () => {
     try {
-      const response = await api.post('/billing/checkout/myfatoorah', {
-        plan: selectedPlan,
+      const response = await api.post('/myfatoorah/subscribe', {
+        plan_id: selectedPlan,
         cycle: billingCycle,
       });
       window.location.href = response.data.payment_url;
@@ -117,7 +126,7 @@ export default function BillingPage() {
                       {t('billing.currentPlan')}
                     </CardTitle>
                     <CardDescription>
-                      {user?.subscription?.plan} Plan - {user?.subscription?.status}
+                      {user?.subscription_plan} Plan - {user?.subscription_status}
                     </CardDescription>
                   </div>
                   <Badge variant="outline" className="text-lg px-3 py-1">
@@ -201,12 +210,12 @@ export default function BillingPage() {
                     <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span className="text-sm">{billingData?.paymentMethod || '•••• •••• •••• ••••'}</span>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => handleUpgrade('Pro Agency')}>
                     {t('billing.updatePayment')}
                   </Button>
                 </div>
 
-                {user?.subscription?.status === 'trial' && (
+                {user?.subscription_status === 'trial' && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
                       <Zap className="inline h-4 w-4 mr-1" />
@@ -242,7 +251,7 @@ export default function BillingPage() {
                 >
                   Yearly
                   <Badge variant="secondary" className="ml-2 text-xs">
-                    Save 17%
+                    Save 20%
                   </Badge>
                 </Button>
               </div>
@@ -279,7 +288,7 @@ export default function BillingPage() {
                     
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
-                        {plan.features.map((feature, index) => (
+                        {plan.features.map((feature: string, index: number) => (
                           <div key={index} className="flex items-center text-sm">
                             <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
                             <span>{feature}</span>
@@ -290,7 +299,7 @@ export default function BillingPage() {
                       {plan.limitations.length > 0 && (
                         <div className="pt-2 border-t">
                           <p className="text-xs text-muted-foreground mb-2">Not included:</p>
-                          {plan.limitations.map((limitation, index) => (
+                          {plan.limitations.map((limitation: string, index: number) => (
                             <div key={index} className="flex items-center text-xs text-muted-foreground">
                               <span className="w-4 h-4 mr-2 flex-shrink-0">×</span>
                               <span>{limitation}</span>
@@ -330,7 +339,7 @@ export default function BillingPage() {
           </Card>
 
           {/* Billing History */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>{t('billing.billingHistory')}</CardTitle>
               <CardDescription>
@@ -368,7 +377,7 @@ export default function BillingPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Upgrade Dialog */}
           <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>

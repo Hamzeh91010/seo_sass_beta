@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -100,7 +101,12 @@ export default function Navbar() {
     document.documentElement.lang = lang;
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
     logout();
     router.push('/auth/login');
   };
@@ -204,9 +210,15 @@ export default function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt={user?.firstName} />
+                  <AvatarImage src="/placeholder-avatar.jpg" alt={user?.name} />
                   <AvatarFallback>
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                    {user?.name
+                      ?.split(' ')
+                      .map((n) => n[0]?.toUpperCase())
+                      .join('')
+                      .slice(0, 2)}
+                    {/* {user?.name?.[0]?.toUpperCase()} */}
+                    {/* {user?.firstName?.[0]}{user?.lastName?.[0]} */}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -215,7 +227,8 @@ export default function Navbar() {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {user?.firstName} {user?.lastName}
+                    {user?.name}
+                    {/* {user?.firstName} {user?.lastName} */}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email}

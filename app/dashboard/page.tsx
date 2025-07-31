@@ -77,7 +77,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                {t('dashboard.welcome')}, {user?.firstName}!
+                {t('dashboard.welcome')}, {user?.name}!
               </h1>
               <p className="text-muted-foreground mt-1">
                 Here's what's happening with your SEO campaigns today.
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle>Plan Usage</CardTitle>
                   <CardDescription>
-                    {user?.subscription?.plan} plan
+                    {user?.subscription_plan} plan
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

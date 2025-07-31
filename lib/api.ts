@@ -14,14 +14,7 @@ export const api = axios.create({
   },
 });
 
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = Cookies.get('auth-token') || localStorage.getItem('auth-token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+api.interceptors.request.use((config) => config);
 
 // Handle auth errors
 api.interceptors.response.use(

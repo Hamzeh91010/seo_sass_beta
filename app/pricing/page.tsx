@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,90 +33,100 @@ export default function PricingPage() {
   const { t, i18n } = useTranslation();
   const [isYearly, setIsYearly] = useState(false);
 
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
   const isRTL = i18n.language === 'ar';
+
+  // Check trial and subscription status
+  const isInTrial = user?.trial_ends_at && new Date(user.trial_ends_at) > new Date();
+  const trialExpired = user?.trial_ends_at && new Date(user.trial_ends_at) < new Date();
+  const hasActiveSubscription = user?.subscription_status === 'active';
+  const currentPlan = user?.subscription_plan?.toLowerCase();
 
   const plans = [
     {
-      name: 'Free',
-      description: 'Perfect for getting started',
-      price: { monthly: 0, yearly: 0 },
+      name: 'Starter',
+      description: 'Great for small businesses',
+      price: { monthly: 29, yearly: 279 },
       popular: false,
       features: [
         '1 Project',
-        '10 Keywords',
-        '1 Site Audit/month',
-        'Basic Reporting',
-        'Email Support',
+        '1 User Seat',
+        '300 Keywords',
+        '10 Site Audits/month',
+        'Google only Tracking',
+        'Email Report',
       ],
       limitations: [
-        'No Backlink Analysis',
-        'No Team Members',
-        'No Custom Reports',
+        'Limited Audit & Rank History',
+        'No Backlink Crawler',
+        'No Team Collaboration',
+        'No Custom Branding',
+        'No Region/Language Selection',
         'No API Access',
+        'No SMTP Control',
+        'No Custom PDF Filters',
+        'No Priority Support',
+        'No Training/Onboarding',
       ],
-      cta: 'Start Free',
-      href: '/auth/register',
-    },
-    {
-      name: 'Starter',
-      description: 'Great for small businesses',
-      price: { monthly: 29, yearly: 24 },
-      popular: false,
-      features: [
-        '3 Projects',
-        '100 Keywords',
-        '5 Site Audits/month',
-        'Backlink Analysis',
-        'Custom Reports',
-        'Email Support',
-      ],
-      limitations: [
-        'No Team Members',
-        'No White-label Reports',
-        'No API Access',
-      ],
-      cta: 'Start Free Trial',
+      cta: 'Start 2-Month Trial',
       href: '/auth/register',
     },
     {
       name: 'Growth',
       description: 'Perfect for growing agencies',
-      price: { monthly: 79, yearly: 66 },
+      price: { monthly: 59, yearly: 567 },
       popular: true,
       features: [
-        '10 Projects',
-        '500 Keywords',
+        '1 User Seats',
+        '8 Projects',
+        '800 Keywords',
         '25 Site Audits/month',
-        'Advanced Backlink Analysis',
-        'White-label Reports',
-        '3 Team Members',
-        'Priority Support',
+        'Basic Backlink Analysis',
+        'Team Collaboration',
+        'Custom Branding (PDF/CSV)',
+        'Google + Bing Tracking',
+        'Weekly Email Reports',
+        'Region/Language Selection',
       ],
       limitations: [
+        'Limited Audit & Rank History',
         'No API Access',
-        'No Custom Integrations',
+        'No SMTP Control',
+        'No Custom PDF Filters',
+        'No Priority Support',
+        'No Training/Onboarding',
       ],
-      cta: 'Start Free Trial',
+      cta: 'Start 2-Month Trial',
       href: '/auth/register',
     },
     {
       name: 'Pro Agency',
       description: 'For established agencies',
-      price: { monthly: 199, yearly: 166 },
+      price: { monthly: 149, yearly: 1431 },
       popular: false,
       features: [
-        '50 Projects',
-        '2,000 Keywords',
+        '10 User Seats',
+        '30 Projects',
+        '3,000 Keywords',
         '100 Site Audits/month',
         'Full Backlink Suite',
-        'Advanced White-label',
-        '10 Team Members',
-        'API Access',
-        'Custom Integrations',
+        'Team Collaboration',
+        'Full Custom Branding',
+        'Google, Bing, Yahoo Tracking',
+        'Weekly Email Reports',
+        'Full Audit & Rank History',
+        'Region/Language Selection',
+        'SMTP Control',
+        'Custom PDF Filters',
         'Priority Support',
       ],
-      limitations: [],
-      cta: 'Start Free Trial',
+      limitations: [
+        'Limited API Access',
+        'No Training/Onboarding',
+      ],
+      cta: 'Get Started',
       href: '/auth/register',
     },
     {
@@ -121,15 +135,22 @@ export default function PricingPage() {
       price: { monthly: 'Custom', yearly: 'Custom' },
       popular: false,
       features: [
+        'Unlimited User Seats',
         'Unlimited Projects',
         'Unlimited Keywords',
         'Unlimited Audits',
-        'Full Platform Access',
+        'Dedicated Backlink Crawler',
         'Unlimited Team Members',
-        'Custom Integrations',
-        'Dedicated Support',
-        'SLA Guarantee',
-        'Custom Training',
+        'Full Custom Branding',
+        'All Search Engines',
+        'Custom Email Reports',
+        'Full Audit & Rank History',
+        'Region/Language Selection',
+        'Full API Access',
+        'SMTP Control',
+        'Custom PDF Filters',
+        'Priority Support',
+        'Training & Onboarding',
       ],
       limitations: [],
       cta: 'Contact Sales',
@@ -137,18 +158,132 @@ export default function PricingPage() {
     },
   ];
 
+  // Determine which plan should be highlighted
+  const getHighlightedPlan = () => {
+    if (!user) return 'Growth'; // Most popular for anonymous users
+    if (hasActiveSubscription && currentPlan) {
+      // Highlight current plan for subscribed users
+      const planName = plans.find(p => p.name.toLowerCase() === currentPlan)?.name;
+      return planName || 'Growth';
+    }
+    return 'Growth'; // Default to most popular
+  };
+
+  const highlightedPlan = getHighlightedPlan();
+
+  // Update plans to set popular flag dynamically
+  const updatedPlans = plans.map(plan => ({
+    ...plan,
+    popular: plan.name === highlightedPlan
+  }));
   const features = [
-    { name: 'Projects', free: '1', starter: '3', growth: '10', pro: '50', enterprise: 'Unlimited' },
-    { name: 'Keywords', free: '10', starter: '100', growth: '500', pro: '2,000', enterprise: 'Unlimited' },
-    { name: 'Site Audits/month', free: '1', starter: '5', growth: '25', pro: '100', enterprise: 'Unlimited' },
-    { name: 'Team Members', free: '1', starter: '1', growth: '3', pro: '10', enterprise: 'Unlimited' },
-    { name: 'Backlink Analysis', free: false, starter: true, growth: true, pro: true, enterprise: true },
-    { name: 'Custom Reports', free: false, starter: true, growth: true, pro: true, enterprise: true },
-    { name: 'White-label Reports', free: false, starter: false, growth: true, pro: true, enterprise: true },
-    { name: 'API Access', free: false, starter: false, growth: false, pro: true, enterprise: true },
-    { name: 'Priority Support', free: false, starter: false, growth: true, pro: true, enterprise: true },
-    { name: 'Custom Integrations', free: false, starter: false, growth: false, pro: true, enterprise: true },
+    { name: 'User Seats', starter: '1', growth: '3', pro: '10', enterprise: 'Unlimited' },
+    { name: 'Projects', starter: '1', growth: '8', pro: '30', enterprise: 'Unlimited' },
+    { name: 'Tracked Keywords', starter: '300', growth: '800', pro: '3,000', enterprise: '10,000+' },
+    { name: 'SEO Audits / Month', starter: '10', growth: '25', pro: '100', enterprise: 'Unlimited' },
+    { name: 'Backlink Crawler', starter: false, growth: 'Basic', pro: 'Full (Depth 3, IPs, Redirects)', enterprise: 'Dedicated' },
+    { name: 'Team Collaboration', starter: false, growth: true, pro: true, enterprise: true },
+    { name: 'Custom Branding (PDF/CSV)', starter: false, growth: false, pro: false, enterprise: 'Full White-label' },
+    { name: 'Search Engine Tracking', starter: 'Google only', growth: 'Google + Bing', pro: 'Google, Bing, Yahoo', enterprise: 'All + custom options' },
+    { name: 'Weekly Email Reports', starter: true, growth: true, pro: true, enterprise: true },
+    { name: 'Audit & Rank History', starter: 'Limited', growth: 'Limited', pro: 'Full retention', enterprise: 'Full retention' },
+    { name: 'Region/Language Selection', starter: false, growth: true, pro: true, enterprise: true },
+    { name: 'API Access', starter: false, growth: false, pro: 'Read-only', enterprise: 'Full access' },
+    { name: 'SMTP / Email Control', starter: false, growth: false, pro: true, enterprise: true },
+    { name: 'Custom PDF Filters', starter: false, growth: false, pro: true, enterprise: true },
+    { name: 'Priority Support', starter: false, growth: false, pro: true, enterprise: 'SLA-backed' },
+    { name: 'Training / Onboarding', starter: false, growth: false, pro: false, enterprise: true },
   ];
+
+  const planIdMap = {
+    "Starter": "starter",
+    "Growth": "growth",
+    "Pro Agency": "pro",
+  };
+
+
+  const handleSelectPlan = async (planId: string) => {    
+    console.log(' Selected plan:', planId);
+    
+    if (loading) {
+      console.log(' Still loading user context...');
+      return; 
+    }
+    
+    if (!user) {
+      console.warn(' No user context found, redirecting');
+      router.push('/auth/register');
+      return;
+    }
+    
+    if (!user.is_verified) {
+      toast.warning('Please verify your email before selecting a plan.');
+      return;
+    }
+    
+    // If user has active subscription and selecting their current plan
+    if (hasActiveSubscription && currentPlan === planId.toLowerCase()) {
+      toast.success('You already have access to this plan.');
+      router.push('/dashboard');
+      return;
+    }
+    
+    // If user is in trial period for Starter or Growth plans, redirect to dashboard
+    if (isInTrial && (planId === 'Starter' || planId === 'Growth')) {
+      toast.success('You already have access to this plan during your trial period.');
+      router.push('/dashboard');
+      return;
+    }
+    
+    if (planId === 'enterprise') {
+      router.push('/contact');
+      return;
+    }
+
+    try {
+      const res = await api.post('/myfatoorah/subscribe', {
+        plan_id: planIdMap[planId as keyof typeof planIdMap],
+        billing_cycle: isYearly ? 'yearly' : 'monthly',
+      });
+      console.log(' Got checkout URL:', res.data.checkout_url);
+      window.location.href = res.data.checkout_url;
+    } catch (err) {
+      toast.error('Failed to create payment session.');
+    }
+  };
+
+  const getCtaLabel = (planName: string) => {
+    if (!user) {
+      return planName === 'Enterprise' ? 'Contact Sales' : (planName === 'Starter' || planName === 'Growth') ? 'Start 2-Month Trial' : 'Get Started';
+    }
+    
+    // If user has active subscription and this is their current plan
+    if (hasActiveSubscription && currentPlan === planName.toLowerCase()) {
+      return 'Go to Dashboard';
+    }
+    
+    // If user is in trial and selecting Starter/Growth plans
+    if (isInTrial && (planName === 'Starter' || planName === 'Growth')) {
+      return 'Start 2-Month Trial';
+    }
+    
+    // If trial expired or no trial
+    if (trialExpired || !user.trial_ends_at) {
+      return planName === 'Enterprise' ? 'Contact Sales' : 'Get Started';
+    }
+    
+    // Default case
+    return planName === 'Enterprise' ? 'Contact Sales' : (planName === 'Starter' || planName === 'Growth') ? 'Start 2-Month Trial' : 'Get Started';
+  };
+
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <span>Loading...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -168,7 +303,7 @@ export default function PricingPage() {
               <span className="text-primary">for your business</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Start with our free plan and upgrade as you grow. All plans include a 14-day free trial.
+              Starter and Growth plans include a 2-month free trial. All paid plans require a credit card.
             </p>
             
             {/* Billing Toggle */}
@@ -184,7 +319,7 @@ export default function PricingPage() {
               <Label htmlFor="billing-toggle" className={isYearly ? 'font-medium' : 'text-muted-foreground'}>
                 Yearly
                 <Badge variant="secondary" className="ml-2">
-                  Save 17%
+                  Save 20%
                 </Badge>
               </Label>
             </div>
@@ -195,44 +330,57 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="py-20 -mt-10">
         <div className="container mx-auto px-4">
-          <div className="grid gap-8 lg:grid-cols-5">
-            {plans.map((plan, index) => (
+          <div className="grid gap-8 lg:grid-cols-4">
+            {updatedPlans.map((plan, index) => (
               <Card key={plan.name} className={`relative ${plan.popular ? 'ring-2 ring-primary shadow-2xl scale-105' : 'shadow-lg'} border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-primary text-primary-foreground px-4 py-1">
                       <Star className="h-3 w-3 mr-1" />
-                      Most Popular
+                      {hasActiveSubscription && currentPlan === plan.name.toLowerCase() ? 'Current Plan' : 'Most Popular'}
                     </Badge>
                   </div>
                 )}
                 
                 <CardHeader className="text-center pb-8">
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription className="text-base">{plan.description}</CardDescription>
-                  <div className="pt-4">
-                    <span className="text-4xl font-bold">
-                      {typeof plan.price[isYearly ? 'yearly' : 'monthly'] === 'number' 
-                        ? `$${plan.price[isYearly ? 'yearly' : 'monthly']}`
-                        : plan.price[isYearly ? 'yearly' : 'monthly']
-                      }
-                    </span>
-                    {typeof plan.price[isYearly ? 'yearly' : 'monthly'] === 'number' && (
-                      <span className="text-muted-foreground">
-                        /{isYearly ? 'year' : 'month'}
-                      </span>
+                  <CardDescription className="text-base">
+                    {(plan.name === 'Starter' || plan.name === 'Growth') && typeof plan.price[isYearly ? 'yearly' : 'monthly'] === 'number'
+                      ? `2-month free trial, then billed ${isYearly ? 'yearly' : 'monthly'}.`
+                      : 'No trial. Immediate billing.'}
+                  </CardDescription>
+                  
+                  <div className="pt-4 text-center">
+                    {isYearly && typeof plan.price.monthly === 'number' && typeof plan.price.yearly === 'number' ? (
+                      <>
+                        <div>
+                          <span className="text-xl text-muted-foreground line-through mr-2">
+                            ${plan.price.monthly * 12}
+                          </span>
+                          <span className="text-4xl font-bold text-primary">
+                            ${plan.price.yearly}
+                          </span>
+                          <span className="text-muted-foreground">/year</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          ${plan.price.monthly}/month billed annually
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-bold">
+                          {typeof plan.price.monthly === 'number' ? `$${plan.price.monthly}` : plan.price.monthly}
+                        </span>
+                        <span className="text-muted-foreground">/month</span>
+                      </>
                     )}
                   </div>
-                  {isYearly && typeof plan.price.monthly === 'number' && plan.price.monthly > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      ${plan.price.monthly}/month billed annually
-                    </p>
-                  )}
                 </CardHeader>
+
                 
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
-                    {plan.features.map((feature, featureIndex) => (
+                    {plan.features.map((feature: string, featureIndex: number) => (
                       <div key={featureIndex} className="flex items-center text-sm">
                         <Check className="h-4 w-4 text-green-600 mr-3 flex-shrink-0" />
                         <span>{feature}</span>
@@ -242,7 +390,7 @@ export default function PricingPage() {
                   
                   {plan.limitations.length > 0 && (
                     <div className="pt-4 border-t space-y-3">
-                      {plan.limitations.map((limitation, limitationIndex) => (
+                      {plan.limitations.map((limitation: string, limitationIndex: number) => (
                         <div key={limitationIndex} className="flex items-center text-sm text-muted-foreground">
                           <X className="h-4 w-4 mr-3 flex-shrink-0" />
                           <span>{limitation}</span>
@@ -255,14 +403,13 @@ export default function PricingPage() {
                     <Button 
                       className={`w-full ${plan.popular ? 'bg-primary hover:bg-primary/90' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
-                      asChild
+                      onClick={() => handleSelectPlan(plan.name)}
+                      disabled={hasActiveSubscription && currentPlan === plan.name.toLowerCase()}
                     >
-                      <Link href={plan.href}>
-                        {plan.cta}
-                        {plan.name !== 'Enterprise' && (
-                          <ArrowRight className={`h-4 w-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        )}
-                      </Link>
+                      {getCtaLabel(plan.name)}
+                      {plan.name !== 'Enterprise' && !(hasActiveSubscription && currentPlan === plan.name.toLowerCase()) && (
+                        <ArrowRight className={`h-4 w-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -289,7 +436,6 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-6 font-semibold">Features</th>
-                  <th className="text-center p-6 font-semibold">Free</th>
                   <th className="text-center p-6 font-semibold">Starter</th>
                   <th className="text-center p-6 font-semibold bg-primary/5">
                     Growth
@@ -303,13 +449,13 @@ export default function PricingPage() {
                 {features.map((feature, index) => (
                   <tr key={feature.name} className={`border-b ${index % 2 === 0 ? 'bg-muted/20' : ''}`}>
                     <td className="p-6 font-medium">{feature.name}</td>
-                    <td className="text-center p-6">
+                    {/* <td className="text-center p-6">
                       {typeof feature.free === 'boolean' ? (
                         feature.free ? <Check className="h-5 w-5 text-green-600 mx-auto" /> : <X className="h-5 w-5 text-gray-400 mx-auto" />
                       ) : (
                         feature.free
                       )}
-                    </td>
+                    </td> */}
                     <td className="text-center p-6">
                       {typeof feature.starter === 'boolean' ? (
                         feature.starter ? <Check className="h-5 w-5 text-green-600 mx-auto" /> : <X className="h-5 w-5 text-gray-400 mx-auto" />
@@ -369,7 +515,7 @@ export default function PricingPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">What happens after the free trial?</h3>
               <p className="text-muted-foreground">
-                After your 14-day free trial ends, you'll be automatically moved to the Free plan. 
+                After your 2-Months free trial ends, you'll be automatically charged. 
                 You can upgrade to a paid plan at any time.
               </p>
             </div>

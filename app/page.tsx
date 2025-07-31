@@ -34,9 +34,16 @@ export default function LandingPage() {
   const isRTL = i18n.language === 'ar';
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (loading || !isAuthenticated) return;
+    
+    const timeout = setTimeout(() => {
       router.push('/dashboard');
-    }
+    }, 10);
+
+    return () => clearTimeout(timeout);
+    // if (!loading && isAuthenticated) {
+    //   router.push('/dashboard');
+    // }
   }, [isAuthenticated, loading, router]);
 
   if (loading) {
@@ -166,7 +173,7 @@ export default function LandingPage() {
               <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                  14-day free trial
+                  2-month free trial
                 </div>
                 <div className="flex items-center">
                   <CheckCircle className="h-4 w-4 text-green-600 mr-2" />

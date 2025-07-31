@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { validateEmail, validateRequired } from '../../utils/validateCredentials';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
@@ -32,13 +33,25 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
+    if (!validateRequired(formData.email) || !validateRequired(formData.password)) {
+      setError('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     try {
       await login(formData.email, formData.password);
-      toast.success(t('auth.loginSuccess'));
+      toast.success(t('Success'));
       router.push('/dashboard');
     } catch (err) {
-      setError(t('auth.invalidCredentials'));
-      toast.error(t('auth.invalidCredentials'));
+      setError(t('Failed to sign in'));
+      toast.error(t('Failed to sign in'));
     } finally {
       setLoading(false);
     }
@@ -126,6 +139,7 @@ export default function LoginPage() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-gray-500" />

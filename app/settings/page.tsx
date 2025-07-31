@@ -68,8 +68,9 @@ export default function SettingsPage() {
   const { data: teamMembers, mutate: mutateTeam } = useSWR('/users/team', fetcher);
 
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    // firstName: user?.firstName || '',
+    // lastName: user?.lastName || '',
+    name: user?.name || '',
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
@@ -99,8 +100,9 @@ export default function SettingsPage() {
   const handleProfileUpdate = () => {
     try {
       api.put('/users/update', {
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
+        // firstName: profileData.firstName,
+        // lastName: profileData.lastName,
+        name: profileData.name,
         email: profileData.email,
       });
       toast.success('Profile updated successfully');
@@ -209,7 +211,7 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">{t('auth.firstName')}</Label>
                       <Input
@@ -228,12 +230,22 @@ export default function SettingsPage() {
                         dir={isRTL ? 'rtl' : 'ltr'}
                       />
                     </div>
+                  </div> */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">{t('auth.name')}</Label>
+                    <Input
+                      id="name"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                      dir={isRTL ? 'rtl' : 'ltr'}
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="email">{t('auth.email')}</Label>
                     <Input
                       id="email"
+                      disabled
                       type="email"
                       value={profileData.email}
                       onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
@@ -393,10 +405,12 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                          {user?.firstName?.[0]}{user?.lastName?.[0]}
+                          {/* {user?.firstName?.[0]}{user?.lastName?.[0]} */}
+                          {user?.name?.[0]}
                         </div>
                         <div>
-                          <p className="font-medium">{user?.firstName} {user?.lastName}</p>
+                          {/* <p className="font-medium">{user?.firstName} {user?.lastName}</p> */}
+                          <p className="font-medium">{user?.name} </p>
                           <p className="text-sm text-muted-foreground">{user?.email}</p>
                         </div>
                       </div>

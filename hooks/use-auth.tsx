@@ -4,36 +4,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { api } from '@/lib/api';
 import { getToken, setToken, removeToken } from '@/lib/auth';
 import toast from 'react-hot-toast';
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'user' | 'admin' | 'team_member';
-  subscription?: {
-    plan: string;
-    status: string;
-    trialEndsAt?: string;
-  };
-}
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
-  resetPassword: (email: string) => Promise<void>;
-  isAuthenticated: boolean;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
+import { User, RegisterData, AuthContextType } from '@/lib/types';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -42,35 +13,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing auth token and fetch user data
-    const token = getToken();
-    
-    if (token) {
-      try {
-        // Fetch current user data from API
-        api.get('/users/me').then(response => {
-          setUser(response.data);
-          setLoading(false);
-        }).catch(() => {
-          removeToken();
-          setLoading(false);
-        });
-      } catch (error) {
-        removeToken();
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    let isMounted = true;
 
+    api.get('/auth/me')
+      .then(res => {
+        console.log('[AuthProvider] Loaded user:', res.data);
+        if (isMounted) setUser(res.data);
+      })
+      .catch((err) => {
+        console.error('[AuthProvider] Failed to load user:', err);
+        if (isMounted) setUser(null);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, []);
+    
   const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { access_token, user } = response.data;
-      
-      setToken(access_token);
-      setUser(user);
+      const userRes = await api.get('/auth/me');      
+      // setToken(access_token);
+      setUser(userRes.data);
     } catch (error) {
       throw error;
     }
@@ -79,17 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterData) => {
     try {
       const response = await api.post('/auth/register', data);
-      const { access_token, user } = response.data;
-      
-      setToken(access_token);
-      setUser(user);
+      // const { access_token, user } = response.data;      
+      // setToken(access_token);
+      // setUser(user);
     } catch (error) {
       throw error;
     }
   };
 
   const logout = () => {
-    removeToken();
+    // removeToken();
     setUser(null);
   };
 
@@ -101,6 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      setUser(response.data);
+    } catch (error) {
+      console.error('[AuthProvider] Failed to refresh user:', error);
+      setUser(null);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -109,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       resetPassword,
-      isAuthenticated: !!user,
+      refreshUser,
+      isAuthenticated: !!user && !loading,
     }}>
       {children}
     </AuthContext.Provider>
