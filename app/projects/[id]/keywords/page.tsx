@@ -57,6 +57,8 @@ import {
   Calendar,
   Loader2,
   AlertCircle,
+  Check,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -81,6 +83,8 @@ export default function ProjectKeywordsPage() {
     // priority: undefined,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editKeywordData, setEditKeywordData] = useState<KeywordCreate>({ keyword: '', tag: '' });
 
   const isRTL = i18n.language === 'ar';
 
@@ -96,6 +100,10 @@ export default function ProjectKeywordsPage() {
     fetcher
   );
 
+  // Role-based permissions
+  const canEdit = project?.role === 'owner' || project?.role === 'editor';
+  const canDelete = project?.role === 'owner' || project?.role === 'editor';
+  const canAdd = project?.role === 'owner' || project?.role === 'editor';
   // Filter keywords based on search
   const filteredKeywords = keywords?.filter((keyword) =>
     keyword.keyword.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -186,6 +194,9 @@ export default function ProjectKeywordsPage() {
     }
   };
 
+  const handleEdit = (keyword: KeywordOut) => {
+    setEditingId(keyword.id);
+  };
 
   if (!projectId) {
     return (
@@ -230,89 +241,68 @@ export default function ProjectKeywordsPage() {
               </p>
             </div>
             
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                  Add Keyword
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[525px]">
-                <DialogHeader>
-                  <DialogTitle>Add New Keyword</DialogTitle>
-                  <DialogDescription>
-                    Add a new SEO keyword to track for this project
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="keyword">Keyword *</Label>
-                    <Input
-                      id="keyword"
-                      value={newKeyword.keyword}
-                      onChange={(e) => setNewKeyword({ ...newKeyword, keyword: e.target.value })}
-                      placeholder="Enter keyword to track"
-                      disabled={isSubmitting}
-                    />
-                  </div>
+            {canAdd && (
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                    Add Keyword
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[525px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Keyword</DialogTitle>
+                    <DialogDescription>
+                      Add a new SEO keyword to track for this project
+                    </DialogDescription>
+                  </DialogHeader>
                   
-                  <div className="grid gap-2">
-                    <Label htmlFor="tag">Tag (Optional)</Label>
-                    <Input
-                      id="tag"
-                      value={newKeyword.tag}
-                      onChange={(e) => setNewKeyword({ ...newKeyword, tag: e.target.value })}
-                      placeholder="e.g., brand, product, service"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  
-                  {/* <div className="grid grid-cols-1 gap-4">
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="keyword">Keyword *</Label>
+                      <Input
+                        id="keyword"
+                        value={newKeyword.keyword}
+                        onChange={(e) => setNewKeyword({ ...newKeyword, keyword: e.target.value })}
+                        placeholder="Enter keyword to track"
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     
                     <div className="grid gap-2">
-                      <Label>Priority</Label>
-                      <Select
-                        value={newKeyword.priority?.toString()}
-                        onValueChange={(value) => setNewKeyword({ ...newKeyword, priority: parseInt(value) })}
+                      <Label htmlFor="tag">Tag (Optional)</Label>
+                      <Input
+                        id="tag"
+                        value={newKeyword.tag}
+                        onChange={(e) => setNewKeyword({ ...newKeyword, tag: e.target.value })}
+                        placeholder="e.g., brand, product, service"
                         disabled={isSubmitting}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 - Low</SelectItem>
-                          <SelectItem value="2">2 - Low</SelectItem>
-                          <SelectItem value="3">3 - Medium</SelectItem>
-                          <SelectItem value="4">4 - High</SelectItem>
-                          <SelectItem value="5">5 - Critical</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
-                  </div> */}
-                </div>
-                
-                <DialogFooter>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsAddDialogOpen(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddKeyword} disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                        Adding...
-                      </>
-                    ) : (
-                      'Add Keyword'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsAddDialogOpen(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddKeyword} disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add Keyword'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {/* Search */}
@@ -397,16 +387,36 @@ export default function ProjectKeywordsPage() {
                       {filteredKeywords.map((keyword) => (
                         <TableRow key={keyword.id}>
                           <TableCell className="font-medium">
-                            {keyword.keyword}
+                            {editingId === keyword.id ? (
+                              <input
+                                type="text"
+                                value={editKeywordData.keyword}
+                                onChange={(e) => setEditKeywordData({ ...editKeywordData, keyword: e.target.value })}
+                                className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                autoFocus
+                              />
+                            ) : (
+                              keyword.keyword
+                            )}
                           </TableCell>
                           <TableCell>
-                            {keyword.tag ? (
-                              <Badge variant="secondary" className="flex items-center w-fit">
-                                <Tag className="h-3 w-3 mr-1" />
-                                {keyword.tag}
-                              </Badge>
+                            {editingId === keyword.id ? (
+                              <input
+                                type="text"
+                                value={editKeywordData.tag}
+                                onChange={(e) => setEditKeywordData({ ...editKeywordData, tag: e.target.value })}
+                                className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                placeholder="Optional tag"
+                              />
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              keyword.tag ? (
+                                <Badge variant="secondary" className="flex items-center w-fit">
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {keyword.tag}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )
                             )}
                           </TableCell>
                           {/* <TableCell>
@@ -426,31 +436,113 @@ export default function ProjectKeywordsPage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Keyword</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete the keyword "{keyword.keyword}"? 
-                                    This action cannot be undone and will remove all associated tracking data.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteKeyword(keyword.id, keyword.keyword)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            {editingId === keyword.id ? (
+                              <div className="flex space-x-2">
+                                {canEdit && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={handleSaveEdit}
+                                      className="text-green-600 hover:text-green-700"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={handleCancelEdit}
+                                      className="text-gray-600 hover:text-gray-700"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex space-x-2">
+                                {canEdit && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(keyword)}
+                                    className="text-blue-600 hover:text-blue-700"
                                   >
-                                    Delete Keyword
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canDelete && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Keyword</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete the keyword "{keyword.keyword}"? 
+                                          This action cannot be undone and will remove all associated tracking data.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteKeyword(keyword.id, keyword.keyword)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Delete Keyword
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                                {!canEdit && !canDelete && (
+                                  <span className="text-xs text-muted-foreground px-2 py-1">
+                                    View Only
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Keyword</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete the keyword "{keyword.keyword}"? 
+                                        This action cannot be undone and will remove all associated tracking data.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteKeyword(keyword.id, keyword.keyword)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete Keyword
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}

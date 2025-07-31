@@ -98,6 +98,8 @@ export type Project = {
   target_region?: string;
   search_engine: 'Google' | 'Bing' | 'Yahoo';
   keywords?: number;
+  members?: number;
+  role?: 'owner' | 'editor' | 'viewer';
   avgPosition?: number;
   lastAudit?: string | null;
   change?: number;

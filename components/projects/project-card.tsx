@@ -35,6 +35,10 @@ import {
   FileBarChart,
   Pause,
   Play,
+  Users,
+  Crown,
+  Eye,
+  Edit3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
@@ -51,6 +55,12 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const isRTL = i18n.language === 'ar';
 
+  // Role-based permissions
+  const isOwner = project.role === 'owner';
+  const isEditor = project.role === 'editor';
+  const canEdit = isOwner || isEditor;
+  const canDelete = isOwner;
+  const canToggleStatus = isOwner || isEditor;
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -78,6 +88,37 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
     );
   };
 
+  const getRoleBadge = (role: string) => {
+    const variants = {
+      owner: { 
+        icon: Crown, 
+        className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+        label: 'Owner'
+      },
+      editor: { 
+        icon: Edit3, 
+        className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+        label: 'Editor'
+      },
+      viewer: { 
+        icon: Eye, 
+        className: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+        label: 'Viewer'
+      },
+    };
+    
+    const config = variants[role as keyof typeof variants];
+    if (!config) return null;
+    
+    const IconComponent = config.icon;
+    
+    return (
+      <Badge className={config.className}>
+        <IconComponent className="h-3 w-3 mr-1" />
+        {config.label}
+      </Badge>
+    );
+  };
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
@@ -115,36 +156,43 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(project)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleToggleStatus}>
-                  {project.is_paused === false ? (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Pause Project
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Resume Project
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(project)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Settings
+                  </DropdownMenuItem>
+                )}
+                {canToggleStatus && (
+                  <DropdownMenuItem onClick={handleToggleStatus}>
+                    {project.is_paused === false ? (
+                      <>
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pause Project
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Resume Project
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
           <div className="flex items-center space-x-2 mt-3">
             {getStatusBadge(project.is_paused === false ? 'active' : 'paused')}
+            {project.role && getRoleBadge(project.role)}
             {getSearchEngineBadge(project.search_engine)}
             <Badge variant="outline" className="text-xs">
               {project.target_region}
@@ -168,14 +216,12 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
             
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-center">
-                <Activity className="h-4 w-4 text-primary mr-1" />
+                <Users className="h-4 w-4 text-primary mr-1" />
                 <span className="text-sm font-medium">
-                  {typeof project.avgPosition === 'number' && project.avgPosition > 0
-                    ? `#${project.avgPosition.toFixed(1)}`
-                    : 'N/A'}
+                  {project.members || 1}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Avg Position</p>
+              <p className="text-xs text-muted-foreground mt-1">Members</p>
             </div>
           </div>
 
@@ -244,28 +290,30 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{project.name}"? This action cannot be undone and will remove all associated keywords, audits, and data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onDelete(project.id);
-                setShowDeleteDialog(false);
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Project
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {canDelete && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{project.name}"? This action cannot be undone and will remove all associated keywords, audits, and data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  onDelete(project.id);
+                  setShowDeleteDialog(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Project
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }

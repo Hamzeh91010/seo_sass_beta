@@ -49,6 +49,7 @@ import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useMemo } from 'react';
 import { Badge } from '../ui/badge';
+import { useAuth } from '@/hooks/use-auth';
 
 interface EditProjectSheetProps {
   open: boolean;
@@ -62,6 +63,7 @@ const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function EditProjectSheet({ open, onOpenChange, project, onSubmit }: EditProjectSheetProps) {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<Project>>({});
   const [initialFormData, setInitialFormData] = useState<Partial<Project>>({});
@@ -265,6 +267,10 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
 
   const isLoadingTeamData = isLoadingInvites || isLoadingMembers;
 
+  // Check if current user is owner
+  const isOwner = project?.role === 'owner';
+  const canManageTeam = isOwner;
+  const canEditProject = isOwner || project?.role === 'editor';
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col">
@@ -291,7 +297,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                   id="name"
                   value={formData.name || ''}
                   onChange={handleInputChange}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canEditProject}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </div>
@@ -302,7 +308,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                   type="url"
                   value={formData.url || ''}
                   onChange={handleInputChange}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canEditProject}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </div>
@@ -313,7 +319,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                   value={formData.description || ''}
                   onChange={handleInputChange}
                   rows={3}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canEditProject}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </div>
@@ -324,7 +330,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                   <Select
                     value={formData.search_engine}
                     onValueChange={(value: 'Google' | 'Bing' | 'Yahoo') => handleSelectChange('search_engine', value)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canEditProject}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -342,7 +348,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                   <Select
                     value={formData.target_region}
                     onValueChange={(value) => handleSelectChange('target_region', value)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canEditProject}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -363,7 +369,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                 <Select
                   value={formData.language}
                   onValueChange={(value) => handleSelectChange('language', value)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canEditProject}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -384,162 +390,165 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                   id="is_paused"
                   checked={formData.is_paused}
                   onCheckedChange={(checked) => handleSwitchChange('is_paused', checked)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canEditProject}
                 />
               </div>
 
-              {/* Team Access Section */}
-              <Separator className="my-4" />
-              <h3 className="text-lg font-semibold">Team Access</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Manage team members and send invitations to collaborate on this project.
-              </p>
+              {/* Team Access Section - Only show for owners */}
+              {canManageTeam && (
+                <>
+                  <Separator className="my-4" />
+                  <h3 className="text-lg font-semibold">Team Access</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Manage team members and send invitations to collaborate on this project.
+                  </p>
 
-              {/* Invite Member Form */}
-              <div className="grid gap-2 mb-4">
-                <Label htmlFor="inviteEmail">Invite New Member</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    id="inviteEmail"
-                    type="email"
-                    placeholder="member@example.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    disabled={isSendingInvite}
-                    className="flex-1"
-                  />
-                  <Select
-                    value={inviteRole}
-                    onValueChange={(value: 'viewer' | 'editor' | 'owner') => setInviteRole(value)}
-                    disabled={isSendingInvite}
-                  >
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="owner">Owner</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleSendInvite} disabled={isSendingInvite}>
-                    {isSendingInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    <span className="sr-only">Send Invite</span>
-                  </Button>
-                </div>
-              </div>
+                  {/* Invite Member Form */}
+                  <div className="grid gap-2 mb-4">
+                    <Label htmlFor="inviteEmail">Invite New Member</Label>
+                    <div className="flex space-x-2">
+                      <Input
+                        id="inviteEmail"
+                        type="email"
+                        placeholder="member@example.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        disabled={isSendingInvite}
+                        className="flex-1"
+                      />
+                      <Select
+                        value={inviteRole}
+                        onValueChange={(value: 'viewer' | 'editor' | 'owner') => setInviteRole(value)}
+                        disabled={isSendingInvite}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                          <SelectItem value="editor">Editor</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={handleSendInvite} disabled={isSendingInvite}>
+                        {isSendingInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        <span className="sr-only">Send Invite</span>
+                      </Button>
+                    </div>
+                  </div>
 
-              {/* Unified Team Table */}
-              {isLoadingTeamData ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span className="ml-2 text-muted-foreground">Loading team data...</span>
-                </div>
-              ) : unifiedTeamList.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No team members or pending invites yet.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {unifiedTeamList.map((entry) => (
-                        <TableRow key={entry.id}>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              {entry.isInvite ? <Mail className="h-4 w-4 text-muted-foreground" /> : <User className="h-4 w-4 text-muted-foreground" />}
-                              <div>
-                                <p className="font-medium">{entry.email}</p>
-                                {entry.name && <p className="text-xs text-muted-foreground">{entry.name}</p>}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {entry.status === 'accepted' ? (
-                              <Select
-                                value={entry.role}
-                                onValueChange={(value: 'viewer' | 'editor' | 'owner') => handleUpdateRole(entry, value)}
-                                disabled={updatingRole === entry.id}
-                              >
-                                <SelectTrigger className="w-[100px] h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="viewer">Viewer</SelectItem>
-                                  <SelectItem value="editor">Editor</SelectItem>
-                                  <SelectItem value="owner">Owner</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <Badge variant="outline">{entry.role}</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              entry.status === 'accepted' ? 'default' :
-                              entry.status === 'pending' ? 'secondary' :
-                              'destructive'
-                            }>
-                              {entry.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              {(entry.status === 'pending' || entry.status === 'declined') && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleResendInvite(entry.id)}
-                                  disabled={resendingInvite === entry.id}
-                                >
-                                  {resendingInvite === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                                  <span className="sr-only">Resend</span>
-                                </Button>
-                              )}
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm" disabled={deletingEntry === entry.id}>
-                                    {deletingEntry === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                    <span className="sr-only">Remove</span>
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirm Removal</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to remove {entry.email} from this project?
-                                      This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteEntry(entry)}>
-                                      Remove
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                  {/* Unified Team Table */}
+                  {isLoadingTeamData ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-muted-foreground">Loading team data...</span>
+                    </div>
+                  ) : unifiedTeamList.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No team members or pending invites yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {unifiedTeamList.map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  {entry.isInvite ? <Mail className="h-4 w-4 text-muted-foreground" /> : <User className="h-4 w-4 text-muted-foreground" />}
+                                  <div>
+                                    <p className="font-medium">{entry.email}</p>
+                                    {entry.name && <p className="text-xs text-muted-foreground">{entry.name}</p>}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {entry.status === 'accepted' ? (
+                                  <Select
+                                    value={entry.role}
+                                    onValueChange={(value: 'viewer' | 'editor' | 'owner') => handleUpdateRole(entry, value)}
+                                    disabled={updatingRole === entry.id}
+                                  >
+                                    <SelectTrigger className="w-[100px] h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="viewer">Viewer</SelectItem>
+                                      <SelectItem value="editor">Editor</SelectItem>
+                                      <SelectItem value="owner">Owner</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Badge variant="outline">{entry.role}</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  entry.status === 'accepted' ? 'default' :
+                                  entry.status === 'pending' ? 'secondary' :
+                                  'destructive'
+                                }>
+                                  {entry.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  {(entry.status === 'pending' || entry.status === 'declined') && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleResendInvite(entry.id)}
+                                      disabled={resendingInvite === entry.id}
+                                    >
+                                      {resendingInvite === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                      <span className="sr-only">Resend</span>
+                                    </Button>
+                                  )}
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="destructive" size="sm" disabled={deletingEntry === entry.id}>
+                                        {deletingEntry === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                        <span className="sr-only">Remove</span>
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirm Removal</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to remove {entry.email} from this project?
+                                          This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteEntry(entry)}>
+                                          Remove
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </>
             </div>
             
             <SheetFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !canEditProject}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
