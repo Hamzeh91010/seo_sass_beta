@@ -232,6 +232,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
   const unifiedTeamList: UnifiedTeamEntry[] = useMemo(() => {
     const combined: UnifiedTeamEntry[] = [];
 
+    console.log('Members:', members);
     if (members) {
       members.forEach((member: any) => {
         combined.push({

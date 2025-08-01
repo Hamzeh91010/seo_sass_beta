@@ -70,7 +70,7 @@ export default function PricingPage() {
         'No Priority Support',
         'No Training/Onboarding',
       ],
-      cta: 'Start 2-Month Trial',
+      cta: 'Start 14-Day Trial',
       href: '/auth/register',
     },
     {
@@ -98,7 +98,7 @@ export default function PricingPage() {
         'No Priority Support',
         'No Training/Onboarding',
       ],
-      cta: 'Start 2-Month Trial',
+      cta: 'Start 14-Day Trial',
       href: '/auth/register',
     },
     {
@@ -254,7 +254,7 @@ export default function PricingPage() {
 
   const getCtaLabel = (planName: string) => {
     if (!user) {
-      return planName === 'Enterprise' ? 'Contact Sales' : (planName === 'Starter' || planName === 'Growth') ? 'Start 2-Month Trial' : 'Get Started';
+      return planName === 'Enterprise' ? 'Contact Sales' : (planName === 'Starter' || planName === 'Growth') ? 'Start 14-Day Trial' : 'Get Started';
     }
     
     // If user has active subscription and this is their current plan
@@ -264,7 +264,7 @@ export default function PricingPage() {
     
     // If user is in trial and selecting Starter/Growth plans
     if (isInTrial && (planName === 'Starter' || planName === 'Growth')) {
-      return 'Start 2-Month Trial';
+      return 'Start 14-Day Trial';
     }
     
     // If trial expired or no trial
@@ -273,7 +273,7 @@ export default function PricingPage() {
     }
     
     // Default case
-    return planName === 'Enterprise' ? 'Contact Sales' : (planName === 'Starter' || planName === 'Growth') ? 'Start 2-Month Trial' : 'Get Started';
+    return planName === 'Enterprise' ? 'Contact Sales' : (planName === 'Starter' || planName === 'Growth') ? 'Start 14-Day Trial' : 'Get Started';
   };
 
 
@@ -303,7 +303,7 @@ export default function PricingPage() {
               <span className="text-primary">for your business</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Starter and Growth plans include a 2-month free trial. All paid plans require a credit card.
+              Starter and Growth plans include a 14-day free trial. All paid plans require a credit card.
             </p>
             
             {/* Billing Toggle */}
@@ -346,7 +346,7 @@ export default function PricingPage() {
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
                   <CardDescription className="text-base">
                     {(plan.name === 'Starter' || plan.name === 'Growth') && typeof plan.price[isYearly ? 'yearly' : 'monthly'] === 'number'
-                      ? `2-month free trial, then billed ${isYearly ? 'yearly' : 'monthly'}.`
+                      ? `14-day free trial, then billed ${isYearly ? 'yearly' : 'monthly'}.`
                       : 'No trial. Immediate billing.'}
                   </CardDescription>
                   
@@ -515,7 +515,7 @@ export default function PricingPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">What happens after the free trial?</h3>
               <p className="text-muted-foreground">
-                After your 2-Months free trial ends, you'll be automatically charged. 
+                After your 14-Day free trial ends, you'll be automatically charged. 
                 You can upgrade to a paid plan at any time.
               </p>
             </div>

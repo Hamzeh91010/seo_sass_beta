@@ -90,13 +90,13 @@ export default function ProjectKeywordsPage() {
 
   // Fetch keywords data
   const { data: keywords, error, mutate, isLoading } = useSWR<KeywordOut[]>(
-    projectId ? `/projects/${projectId}/keywords` : null,
+    projectId ? `projects/${projectId}/keywords` : null,
     fetcher
   );
 
   // Fetch project info for header
   const { data: project } = useSWR(
-    projectId ? `/projects/${projectId}` : null,
+    projectId ? `projects/${projectId}` : null,
     fetcher
   );
 
@@ -374,7 +374,7 @@ export default function ProjectKeywordsPage() {
                         {/* <TableHead>Language</TableHead> */}
                         {/* <TableHead>Priority</TableHead> */}
                         <TableHead>Added Date</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
