@@ -103,6 +103,24 @@ export default function ProjectsPage() {
       await api.patch(`/projects/${id}`, { is_paused:isPaused });
       mutate(); // Refresh the list
       toast.success(`Project ${isPaused === false ? 'resumed' : 'paused'} successfully!`);
+      
+      // Trigger scraper when resuming project
+      if (isPaused === false) {
+        const project = projects?.find(p => p.id === id);
+        if (project) {
+          try {
+            await api.post(`/projects/${id}/scrape`, {
+              search_engines: [project.search_engine],
+              region: project.target_region || 'global',
+              device: 'desktop'
+            });
+            toast.success('Rank tracking started for this project');
+          } catch (error: any) {
+            console.error('Failed to start rank tracking:', error);
+            // Don't show error toast here as project was successfully resumed
+          }
+        }
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || 'Failed to update project status';
       toast.error(errorMessage);

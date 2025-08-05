@@ -119,6 +119,27 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
 
   const handleSwitchChange = (id: string, checked: boolean) => {
     setFormData(prev => ({ ...prev, [id]: checked }));
+    
+    // If resuming project (unchecking is_paused), trigger scraper
+    if (id === 'is_paused' && !checked && formData.is_paused === true && project?.id) {
+      handleTriggerScraper();
+    }
+  };
+
+  const handleTriggerScraper = async () => {
+    if (!project?.id) return;
+    
+    try {
+      await api.post(`/projects/${project.id}/scrape`, {
+        search_engines: [formData.search_engine || project.search_engine],
+        region: formData.target_region || project.target_region || 'global',
+        device: 'desktop'
+      });
+      toast.success('Rank tracking started for this project');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || 'Failed to start rank tracking';
+      toast.error(errorMessage);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

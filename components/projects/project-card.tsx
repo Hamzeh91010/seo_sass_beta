@@ -127,6 +127,25 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
   const handleToggleStatus = () => {
     const newStatus = project.is_paused === false;
     onToggleStatus(project.id, newStatus);
+    
+    // Trigger scraper when resuming project
+    if (project.is_paused === true && canToggleStatus) {
+      handleTriggerScraper();
+    }
+  };
+
+  const handleTriggerScraper = async () => {
+    try {
+      await api.post(`/projects/${project.id}/scrape`, {
+        search_engines: [project.search_engine],
+        region: project.target_region || 'global',
+        device: 'desktop'
+      });
+      toast.success('Rank tracking started for this project');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || 'Failed to start rank tracking';
+      toast.error(errorMessage);
+    }
   };
 
   return (

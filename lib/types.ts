@@ -196,3 +196,33 @@ export interface UnifiedTeamEntry {
   created_at?: string; // Only for invites
   isInvite: boolean; // True if it's an invite, false if it's an accepted member
 }
+
+// Ranking Types
+export interface KeywordRanking {
+  id: number;
+  keyword_id: number;
+  project_id: number;
+  search_engine: 'Google' | 'Bing' | 'Yahoo';
+  region: string;
+  device: 'desktop' | 'mobile';
+  position: number | null;
+  title: string | null;
+  url: string | null;
+  snippet: string | null;
+  checked_at: string;
+  keyword: {
+    id: number;
+    keyword: string;
+    tag?: string;
+  };
+  project: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface ScrapeRequest {
+  search_engines: string[];
+  region: string;
+  device: string;
+}
