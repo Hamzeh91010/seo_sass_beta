@@ -106,10 +106,10 @@ export default function AnalyticsSummary({
     if (!summaryData) return [];
     
     return [
-      { name: 'Top 3', value: summaryData.top_3, color: PIE_COLORS[0] },
-      { name: 'Top 10', value: summaryData.top_10, color: PIE_COLORS[1] },
-      { name: 'Top 100', value: summaryData.top_100, color: PIE_COLORS[2] },
-      { name: 'Not Ranking', value: summaryData.not_ranking, color: PIE_COLORS[3] },
+      { name: 'Top 3', value: summaryData.position_distribution.top_3, color: PIE_COLORS[0] },
+      { name: 'Top 10', value: summaryData.position_distribution.top_10, color: PIE_COLORS[1] },
+      { name: 'Top 100', value: summaryData.position_distribution.top_100, color: PIE_COLORS[2] },
+      { name: 'Not Ranking', value: summaryData.position_distribution.not_ranking, color: PIE_COLORS[3] },
     ].filter(item => item.value > 0);
   }, [summaryData]);
 
@@ -154,7 +154,7 @@ export default function AnalyticsSummary({
   const PieTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0];
-      const percentage = summaryData ? ((data.value / summaryData.total_keywords) * 100).toFixed(1) : '0';
+      const percentage = summaryData ? ((data.value / summaryData.position_distribution.total_keywords) * 100).toFixed(1) : '0';
       
       return (
         <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
@@ -424,14 +424,14 @@ export default function AnalyticsSummary({
                 </ResponsiveContainer>
                 
                 {/* Center Label */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {/* <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
                     <div className="text-2xl font-bold">
                       {summaryData?.total_keywords?.toLocaleString() || '0'}
                     </div>
                     <div className="text-xs text-muted-foreground">Total</div>
                   </div>
-                </div>
+                </div> */}
               </div>
             ) : (
               <div className="flex items-center justify-center h-80">
