@@ -54,6 +54,7 @@ import toast from 'react-hot-toast';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import AnalyticsSummary from '@/components/rankings/analytics-summary';
 
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
@@ -365,6 +366,14 @@ export default function RankingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Analytics Summary */}
+          <AnalyticsSummary
+            selectedProject={selectedProject}
+            searchEngine={searchEngine}
+            device={device}
+            region={region}
+          />
 
           {/* Results Summary */}
           <div className="flex items-center justify-between mb-6">
