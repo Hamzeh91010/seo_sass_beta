@@ -43,7 +43,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Loader2, Mail, User, Trash2, Send, Edit, Play, Pause } from 'lucide-react';
-import { Project, ProjectCreate, UnifiedTeamEntry } from '@/lib/types';
+import { Project, UnifiedTeamEntry } from '@/lib/types';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -100,6 +100,8 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
         description: fullProject.description,
         search_engine: fullProject.search_engine,
         target_region: fullProject.target_region,
+        device_type: fullProject.device_type.toLowerCase(),
+        tracking_frequency: fullProject.tracking_frequency.toLowerCase(),
         language: fullProject.language,
         is_paused: fullProject.is_paused,
       };
@@ -120,7 +122,6 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
   const handleSwitchChange = (id: string, checked: boolean) => {
     setFormData(prev => ({ ...prev, [id]: checked }));
     
-    // If resuming project (unchecking is_paused), trigger scraper
     if (id === 'is_paused' && !checked && formData.is_paused === true && project?.id) {
       handleTriggerScraper();
     }
@@ -132,8 +133,8 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
     try {
       await api.post(`/projects/${project.id}/scrape`, {
         search_engines: [formData.search_engine || project.search_engine],
-        region: formData.target_region || project.target_region || 'global',
-        device: 'desktop'
+        region: formData.target_region || project.target_region || 'Global',
+        device: project.device_type || 'desktop',
       });
       toast.success('Rank tracking started for this project');
     } catch (error: any) {
@@ -150,27 +151,15 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
     (Object.keys(formData) as Array<keyof typeof formData>).forEach((key) => {
       const newValue = formData[key];
       const oldValue = initialFormData[key];
-      //  if (newValue !== oldValue && newValue !== null) {
-      // if ((newValue ?? '') !== (oldValue ?? '')) {
-      //   (changes as any)[key] = newValue;
-      //   console.log('Detected changes:', changes);
-      // }
       const normalizedNew = newValue ?? '';
       const normalizedOld = oldValue ?? '';
 
       if (normalizedNew !== normalizedOld) {
-        // (changes as any)[key] = newValue;
         changes[key] = newValue;
       }
     });
-    
-    console.log("🔍 Diffing:");
-    console.log("formData:", formData);
-    console.log("initialFormData:", initialFormData);
-    console.log("changes to send:", changes);
 
     if (Object.keys(changes).length === 0) {
-      // toast.info('No changes to save.');
       onOpenChange(false);
       return;
     }
@@ -402,10 +391,55 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Global">Global</SelectItem>
-                      <SelectItem value="UAE">UAE</SelectItem>
-                      <SelectItem value="KSA">Saudi Arabia</SelectItem>
-                      <SelectItem value="USA">United States</SelectItem>
-                      <SelectItem value="UK">United Kingdom</SelectItem>
+                      <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                      <SelectItem value="United States">United States</SelectItem>
+                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Device Type</Label>
+                  <Select
+                    value={formData.device_type}
+                    onValueChange={(value: 'desktop' | 'mobile') => {
+                      if (formData.device_type !== value) {
+                        handleSelectChange('device_type', value);
+                      }
+                    }}
+                    disabled={isSubmitting || !canEditProject}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="desktop">Desktop</SelectItem>
+                      <SelectItem value="mobile">Mobile</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label>Tracking Frequency</Label>
+                  <Select
+                    value={formData.tracking_frequency}
+                    onValueChange={(value: 'manual' | 'daily' | 'weekly') => {
+                      if (formData.tracking_frequency !== value) {
+                        handleSelectChange('tracking_frequency', value);
+                      }
+                    }}
+                    disabled={isSubmitting || !canEditProject}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

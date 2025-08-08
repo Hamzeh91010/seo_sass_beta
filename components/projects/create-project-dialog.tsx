@@ -39,6 +39,8 @@ export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: Cr
     description: '',
     search_engine: 'Google',
     target_region: 'Global',
+    device_type: 'desktop',
+    tracking_frequency: 'manual',
     language: 'English',
   });
 
@@ -61,6 +63,8 @@ export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: Cr
         description: '',
         search_engine: 'Google',
         target_region: 'Global',
+        device_type: 'desktop',
+        tracking_frequency: 'manual',
         language: 'English',
       });
       onOpenChange(false);
@@ -168,10 +172,49 @@ export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: Cr
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Global">Global</SelectItem>
-                    <SelectItem value="UAE">UAE</SelectItem>
-                    <SelectItem value="KSA">Saudi Arabia</SelectItem>
-                    <SelectItem value="USA">United States</SelectItem>
-                    <SelectItem value="UK">United Kingdom</SelectItem>
+                    <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+                    <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                    <SelectItem value="United States">United States</SelectItem>
+                    <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid gap-2">
+                <Label>Device Type</Label>
+                <Select
+                  value={formData.device_type}
+                  onValueChange={(value: 'desktop' | 'mobile') => 
+                    setFormData({ ...formData, device_type: value })
+                  }
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="desktop">Desktop</SelectItem>
+                    <SelectItem value="mobile">Mobile</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label>Tracking Frequiency</Label>
+                <Select
+                  value={formData.tracking_frequency}
+                  onValueChange={(value: 'manual' | 'daily' | 'weekly') => setFormData({ ...formData, tracking_frequency: value })}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="manual">Manual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -102,7 +102,7 @@ export default function ProjectsPage() {
     try {
       await api.patch(`/projects/${id}`, { is_paused:isPaused });
       mutate(); // Refresh the list
-      toast.success(`Project ${isPaused === false ? 'resumed' : 'paused'} successfully!`);
+      // toast.success(`Project ${isPaused === false ? 'resumed' : 'paused'} successfully!`);
       
       // Trigger scraper when resuming project
       if (isPaused === false) {
@@ -111,8 +111,8 @@ export default function ProjectsPage() {
           try {
             await api.post(`/projects/${id}/scrape`, {
               search_engines: [project.search_engine],
-              region: project.target_region || 'global',
-              device: 'desktop'
+              region: project.target_region || 'Global',
+              device: project.device_type || 'desktop',
             });
             toast.success('Rank tracking started for this project');
           } catch (error: any) {

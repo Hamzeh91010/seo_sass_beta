@@ -96,6 +96,8 @@ export type Project = {
   is_paused?: boolean | false;
   language?: string;
   target_region?: string;
+  device_type?: 'desktop' | 'mobile';
+  tracking_frequency?: 'manual' | 'daily' | 'weekly';
   search_engine: 'Google' | 'Bing' | 'Yahoo';
   keywords?: number;
   members?: number;
@@ -112,6 +114,8 @@ export type ProjectCreate = {
   url: string;
   description?: string;
   search_engine: 'Google' | 'Bing' | 'Yahoo';
+  device_type: 'desktop' | 'mobile';
+  tracking_frequency: 'manual' | 'daily' | 'weekly';
   target_region: string;
   language: string;
 };

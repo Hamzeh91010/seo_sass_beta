@@ -100,11 +100,15 @@ export default function RankingsPage() {
   const [sortBy, setSortBy] = useState<'keyword' | 'position' | 'checked_at'>('checked_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedKeyword, setSelectedKeyword] = useState<number | null>(null);
+  const [selectedKeywordInfo, setSelectedKeywordInfo] = useState<{
+    id: number;
+    projectId: number;
+    engine: string;
+    device: string;
+    region: string;
+  } | null>(null);
 
   const isRTL = i18n.language === 'ar';
-
-  // Fetch projects for filter dropdown
   const { data: projects } = useSWR<Project[]>('/projects', fetcher);
 
   // Fetch rankings with filters
@@ -116,23 +120,62 @@ export default function RankingsPage() {
     if (region !== 'all') params.append('region', region);
     params.append('page', currentPage.toString());
     params.append('limit', ITEMS_PER_PAGE.toString());
-    params.append('sort_by', sortBy);
-    params.append('sort_order', sortOrder);
+    // params.append('sort_by', sortBy);
+    // params.append('sort_order', sortOrder);
     if (searchTerm) params.append('search', searchTerm);
     
-    return `/rankings?${params.toString()}`;
+    return `/rankings/?${params.toString()}`;
   }, [selectedProject, searchEngine, device, region, currentPage, sortBy, sortOrder, searchTerm]);
 
   const { data: rankingsData, error, isLoading, mutate } = useSWR(rankingsUrl, fetcher);
   const rankings = rankingsData?.rankings || [];
+
   const totalCount = rankingsData?.total || 0;
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  // Fetch keyword history for chart
+  const sortedRankings = useMemo(() => {
+    const sorted = [...rankings];
+    sorted.sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+
+      if (sortBy === 'keyword') {
+        return sortOrder === 'asc'
+          ? a.keyword.keyword.localeCompare(b.keyword.keyword)
+          : b.keyword.keyword.localeCompare(a.keyword.keyword);
+      }
+
+      if (sortBy === 'checked_at') {
+        return sortOrder === 'asc'
+          ? new Date(aVal).getTime() - new Date(bVal).getTime()
+          : new Date(bVal).getTime() - new Date(aVal).getTime();
+      }
+
+      if (sortBy === 'position') {
+        return sortOrder === 'asc'
+          ? (aVal ?? 9999) - (bVal ?? 9999)
+          : (bVal ?? 9999) - (aVal ?? 9999);
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }, [rankings, sortBy, sortOrder]);
+
+
   const { data: keywordHistory } = useSWR(
-    selectedKeyword ? `/rankings/keyword/${selectedKeyword}/history` : null,
+    selectedKeywordInfo
+      ? `/rankings/history?keyword_id=${selectedKeywordInfo.id}&project_id=${selectedKeywordInfo.projectId}&search_engine=${selectedKeywordInfo.engine}&device=${selectedKeywordInfo.device}&region=${selectedKeywordInfo.region}`
+      : null,
     fetcher
   );
+  
+  console.log("Keyword history:", keywordHistory);
+
 
   const getPositionBadge = (position: number | null) => {
     if (!position) {
@@ -304,11 +347,11 @@ export default function RankingsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Regions</SelectItem>
-                      <SelectItem value="global">Global</SelectItem>
-                      <SelectItem value="US">United States</SelectItem>
-                      <SelectItem value="UK">United Kingdom</SelectItem>
-                      <SelectItem value="UAE">UAE</SelectItem>
-                      <SelectItem value="KSA">Saudi Arabia</SelectItem>
+                      <SelectItem value="Global">Global</SelectItem>
+                      <SelectItem value="United States">United States</SelectItem>
+                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                      <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -330,18 +373,29 @@ export default function RankingsPage() {
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">Sort by:</span>
-              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+              {/* <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
                 const [column, order] = value.split('-') as [typeof sortBy, typeof sortOrder];
                 setSortBy(column);
                 setSortOrder(order);
                 setCurrentPage(1);
+              }}> */}
+              <Select onValueChange={(value) => {
+                const [column, order] = value.split('-') as [typeof sortBy, typeof sortOrder];
+
+                // Even if same value, force reset
+                setSortBy(column);
+                setSortOrder(order);
+                setCurrentPage(1);
+
+                // Add this to force revalidation of SWR
+                mutate();
               }}>
                 <SelectTrigger className="w-40">
-                  <SelectValue />
+                  <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="checked_at-desc">Latest First</SelectItem>
-                  <SelectItem value="checked_at-asc">Oldest First</SelectItem>
+                  {/* <SelectItem value="checked_at-desc">Latest First</SelectItem>
+                  <SelectItem value="checked_at-asc">Oldest First</SelectItem> */}
                   <SelectItem value="position-asc">Best Position</SelectItem>
                   <SelectItem value="position-desc">Worst Position</SelectItem>
                   <SelectItem value="keyword-asc">Keyword A-Z</SelectItem>
@@ -412,11 +466,12 @@ export default function RankingsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rankings.map((ranking: KeywordRanking) => (
+                      {/* {rankings.map((ranking: KeywordRanking) => ( */}
+                      {sortedRankings.map((ranking: KeywordRanking) => (
                         <TableRow key={ranking.id}>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{ranking.keyword.keyword}</div>
+                              <div className="font-medium">{ranking.keyword?.keyword || '-'}</div>
                               {ranking.keyword.tag && (
                                 <Badge variant="secondary" className="text-xs mt-1">
                                   {ranking.keyword.tag}
@@ -462,7 +517,14 @@ export default function RankingsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setSelectedKeyword(ranking.keyword_id)}
+                                  // onClick={() => setSelectedKeyword(ranking.keyword_id)}
+                                  onClick={() => setSelectedKeywordInfo({
+                                    id: ranking.keyword_id,
+                                    projectId: ranking.project_id,
+                                    engine: ranking.search_engine,
+                                    device: ranking.device,
+                                    region: ranking.region,
+                                  })}
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -483,12 +545,15 @@ export default function RankingsPage() {
                                           <XAxis 
                                             dataKey="checked_at" 
                                             className="text-xs fill-muted-foreground"
+                                            tick={{ fontSize: 12, fill: '#999' }}
                                             tickFormatter={(value) => new Date(value).toLocaleDateString()}
                                           />
                                           <YAxis 
                                             className="text-xs fill-muted-foreground"
                                             domain={[1, 100]}
                                             reversed
+                                            tick={{ fontSize: 12, fill: '#999' }}
+                                            tickFormatter={(value) => `#${value}`}
                                           />
                                           <Tooltip 
                                             contentStyle={{ 

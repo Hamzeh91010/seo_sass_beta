@@ -138,8 +138,8 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
     try {
       await api.post(`/projects/${project.id}/scrape`, {
         search_engines: [project.search_engine],
-        region: project.target_region || 'global',
-        device: 'desktop'
+        region: project.target_region || 'Global',
+        device: project.device_type || 'desktop'
       });
       toast.success('Rank tracking started for this project');
     } catch (error: any) {
