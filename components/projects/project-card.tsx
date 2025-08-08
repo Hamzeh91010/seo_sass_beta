@@ -39,6 +39,11 @@ import {
   Crown,
   Eye,
   Edit3,
+  Monitor,
+  Smartphone,
+  Clock,
+  Zap,
+  MapPin,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
@@ -119,6 +124,28 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
       </Badge>
     );
   };
+
+  const getTrackingFrequencyIcon = (frequency: string) => {
+    switch (frequency?.toLowerCase()) {
+      case 'daily':
+        return <Zap className="h-3 w-3 text-green-600" />;
+      case 'weekly':
+        return <Clock className="h-3 w-3 text-blue-600" />;
+      case 'manual':
+        return <Clock className="h-3 w-3 text-gray-500" />;
+      default:
+        return <Clock className="h-3 w-3 text-gray-500" />;
+    }
+  };
+
+  const getDeviceIcon = (deviceType: string) => {
+    return deviceType?.toLowerCase() === 'mobile' ? (
+      <Smartphone className="h-3 w-3 text-primary" />
+    ) : (
+      <Monitor className="h-3 w-3 text-primary" />
+    );
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
@@ -150,7 +177,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-all duration-200 group">
+      <Card className="hover:shadow-lg transition-all duration-200 group border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -209,13 +236,29 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
             </DropdownMenu>
           </div>
 
-          <div className="flex items-center space-x-2 mt-3">
+          {/* Primary Badges Row */}
+          <div className="flex items-center flex-wrap gap-2 mt-3">
             {getStatusBadge(project.is_paused === false ? 'active' : 'paused')}
             {project.role && getRoleBadge(project.role)}
             {getSearchEngineBadge(project.search_engine)}
-            <Badge variant="outline" className="text-xs">
-              {project.target_region}
-            </Badge>
+          </div>
+
+          {/* Secondary Info Row */}
+          <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-1">
+                <MapPin className="h-3 w-3" />
+                <span className="truncate max-w-[80px]">{project.target_region}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {getDeviceIcon(project.device_type)}
+                <span className="capitalize">{project.device_type}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {getTrackingFrequencyIcon(project.tracking_frequency)}
+                <span className="capitalize">{project.tracking_frequency}</span>
+              </div>
+            </div>
             <Badge variant="outline" className="text-xs">
               {project.language}
             </Badge>

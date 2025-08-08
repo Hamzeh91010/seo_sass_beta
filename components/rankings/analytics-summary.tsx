@@ -28,6 +28,7 @@ import {
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 
+import { Badge } from '@/components/ui/badge';
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
 
@@ -38,17 +39,33 @@ interface AnalyticsSummaryProps {
   region: string;
 }
 
-interface TrendData {
-  date: string;
-  average_position: number;
+interface MovementData {
+  moved_up: number;
+  moved_down: number;
+  unchanged: number;
   total_keywords: number;
 }
 
-interface SummaryData {
+interface PositionDistribution {
   top_3: number;
   top_10: number;
   top_100: number;
   not_ranking: number;
+  total_keywords: number;
+}
+
+interface SummaryData {
+  movement: MovementData;
+  position_distribution: {
+    current: PositionDistribution;
+    previous: PositionDistribution;
+  };
+  total_keywords: number;
+}
+
+interface TrendData {
+  date: string;
+  average_position: number;
   total_keywords: number;
 }
 
@@ -58,13 +75,6 @@ const TIME_RANGES = [
   { label: '30D', value: '30', days: 30 },
   { label: '90D', value: '90', days: 90 },
   { label: 'All Time', value: 'all', days: null },
-];
-
-const PIE_COLORS = [
-  '#10b981', // Green for Top 3
-  '#3b82f6', // Blue for Top 10
-  '#f59e0b', // Amber for Top 100
-  '#ef4444', // Red for Not Ranking
 ];
 
 export default function AnalyticsSummary({
@@ -100,18 +110,6 @@ export default function AnalyticsSummary({
   // Fetch data
   const { data: trendData, error: trendError, isLoading: trendLoading } = useSWR<TrendData[]>(trendUrl, fetcher);
   const { data: summaryData, error: summaryError, isLoading: summaryLoading } = useSWR<SummaryData>(summaryUrl, fetcher);
-
-  // Prepare pie chart data
-  const pieData = useMemo(() => {
-    if (!summaryData) return [];
-    
-    return [
-      { name: 'Top 3', value: summaryData.position_distribution.top_3, color: PIE_COLORS[0] },
-      { name: 'Top 10', value: summaryData.position_distribution.top_10, color: PIE_COLORS[1] },
-      { name: 'Top 100', value: summaryData.position_distribution.top_100, color: PIE_COLORS[2] },
-      { name: 'Not Ranking', value: summaryData.position_distribution.not_ranking, color: PIE_COLORS[3] },
-    ].filter(item => item.value > 0);
-  }, [summaryData]);
 
   // Calculate trend
   const positionTrend = useMemo(() => {
@@ -150,24 +148,82 @@ export default function AnalyticsSummary({
     return null;
   };
 
-  // Custom tooltip for pie chart
-  const PieTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const percentage = summaryData ? ((data.value / summaryData.position_distribution.total_keywords) * 100).toFixed(1) : '0';
-      
+  // Prepare ranking comparison data
+  const rankingComparison = useMemo(() => {
+    if (!summaryData?.position_distribution) return [];
+    
+    const { current, previous } = summaryData.position_distribution;
+    
+    return [
+      {
+        label: 'Top 3',
+        current: current.top_3,
+        previous: previous.top_3,
+        change: current.top_3 - previous.top_3,
+        color: 'bg-green-500',
+        lightColor: 'bg-green-100 dark:bg-green-900/20',
+        textColor: 'text-green-800 dark:text-green-400'
+      },
+      {
+        label: 'Top 10',
+        current: current.top_10,
+        previous: previous.top_10,
+        change: current.top_10 - previous.top_10,
+        color: 'bg-blue-500',
+        lightColor: 'bg-blue-100 dark:bg-blue-900/20',
+        textColor: 'text-blue-800 dark:text-blue-400'
+      },
+      {
+        label: 'Top 100',
+        current: current.top_100,
+        previous: previous.top_100,
+        change: current.top_100 - previous.top_100,
+        color: 'bg-amber-500',
+        lightColor: 'bg-amber-100 dark:bg-amber-900/20',
+        textColor: 'text-amber-800 dark:text-amber-400'
+      },
+      {
+        label: 'Not Ranking',
+        current: current.not_ranking,
+        previous: previous.not_ranking,
+        change: current.not_ranking - previous.not_ranking,
+        color: 'bg-red-500',
+        lightColor: 'bg-red-100 dark:bg-red-900/20',
+        textColor: 'text-red-800 dark:text-red-400'
+      }
+    ];
+  }, [summaryData]);
+
+  const getChangeIcon = (change: number) => {
+    if (change > 0) {
+      return <TrendingUp className="h-3 w-3 text-green-600" />;
+    } else if (change < 0) {
+      return <TrendingDown className="h-3 w-3 text-red-600" />;
+    } else {
+      return <Minus className="h-3 w-3 text-gray-500" />;
+    }
+  };
+
+  const getChangeBadge = (change: number) => {
+    if (change > 0) {
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-          <p className="text-sm font-medium" style={{ color: data.payload.color }}>
-            {data.name}
-          </p>
-          <p className="text-sm">
-            <span className="font-semibold">{data.value}</span> keywords ({percentage}%)
-          </p>
-        </div>
+        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+          +{change}
+        </Badge>
+      );
+    } else if (change < 0) {
+      return (
+        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+          {change}
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="secondary">
+          0
+        </Badge>
       );
     }
-    return null;
   };
 
   const isLoading = trendLoading || summaryLoading;
@@ -192,7 +248,7 @@ export default function AnalyticsSummary({
   return (
     <div className="mb-8 space-y-6">
       {/* Summary Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Keywords</CardTitle>
@@ -214,6 +270,63 @@ export default function AnalyticsSummary({
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Moved Up</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {isLoading ? (
+                <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+              ) : (
+                summaryData?.movement?.moved_up?.toLocaleString() || '0'
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Keywords improved
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Moved Down</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {isLoading ? (
+                <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+              ) : (
+                summaryData?.movement?.moved_down?.toLocaleString() || '0'
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Keywords declined
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Unchanged</CardTitle>
+            <Minus className="h-4 w-4 text-gray-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-600">
+              {isLoading ? (
+                <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+              ) : (
+                summaryData?.movement?.unchanged?.toLocaleString() || '0'
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Keywords stable
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Top 3 Rankings</CardTitle>
             <div className="w-3 h-3 bg-green-500 rounded-full" />
           </CardHeader>
@@ -222,12 +335,12 @@ export default function AnalyticsSummary({
               {isLoading ? (
                 <div className="h-8 w-16 bg-muted animate-pulse rounded" />
               ) : (
-                summaryData?.top_3?.toLocaleString() || '0'
+                summaryData?.position_distribution?.current?.top_3?.toLocaleString() || '0'
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {summaryData?.total_keywords ? 
-                `${((summaryData.top_3 / summaryData.total_keywords) * 100).toFixed(1)}% of total` : 
+              {summaryData?.position_distribution?.current ? 
+                `${((summaryData.position_distribution.current.top_3 / summaryData.total_keywords) * 100).toFixed(1)}% of total` : 
                 'Keywords in top 3'
               }
             </p>
@@ -244,12 +357,12 @@ export default function AnalyticsSummary({
               {isLoading ? (
                 <div className="h-8 w-16 bg-muted animate-pulse rounded" />
               ) : (
-                summaryData?.top_10?.toLocaleString() || '0'
+                summaryData?.position_distribution?.current?.top_10?.toLocaleString() || '0'
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {summaryData?.total_keywords ? 
-                `${((summaryData.top_10 / summaryData.total_keywords) * 100).toFixed(1)}% of total` : 
+              {summaryData?.position_distribution?.current ? 
+                `${((summaryData.position_distribution.current.top_10 / summaryData.total_keywords) * 100).toFixed(1)}% of total` : 
                 'Keywords in top 10'
               }
             </p>
@@ -374,72 +487,68 @@ export default function AnalyticsSummary({
           </CardContent>
         </Card>
 
-        {/* Pie Chart - Latest Ranking Distribution */}
+        {/* Ranking Distribution Comparison */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center">
               <BarChart3 className="h-5 w-5 mr-2" />
-              Ranking Distribution
+              Ranking Changes
             </CardTitle>
             <CardDescription>
-              Current keyword position breakdown
+              Compare current vs previous rankings
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex items-center justify-center h-80">
+              <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2 text-muted-foreground">Loading distribution...</span>
+                <span className="ml-2 text-muted-foreground">Loading comparison...</span>
               </div>
-            ) : pieData.length > 0 ? (
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                      animationBegin={0}
-                      animationDuration={1000}
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                    <Legend 
-                      verticalAlign="bottom" 
-                      height={36}
-                      formatter={(value, entry: any) => (
-                        <span style={{ color: entry.color }} className="text-sm">
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                
-                {/* Center Label */}
-                {/* <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">
-                      {summaryData?.total_keywords?.toLocaleString() || '0'}
+            ) : rankingComparison.length > 0 ? (
+              <div className="space-y-4">
+                {rankingComparison.map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                        <span className="font-medium text-sm">{item.label}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {getChangeIcon(item.change)}
+                        {getChangeBadge(item.change)}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Total</div>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {item.previous} → {item.current}
+                      </span>
+                      <span className={`font-medium ${item.textColor}`}>
+                        {item.current} keywords
+                      </span>
+                    </div>
+                    
+                    {/* Visual Progress Bar */}
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-500 ${item.color}`}
+                        style={{ 
+                          width: summaryData?.total_keywords 
+                            ? `${Math.min((item.current / summaryData.total_keywords) * 100, 100)}%` 
+                            : '0%' 
+                        }}
+                      />
+                    </div>
                   </div>
-                </div> */}
+                ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-80">
+              <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                   <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No ranking data</h3>
+                  <h3 className="text-lg font-semibold mb-2">No comparison data</h3>
                   <p className="text-muted-foreground text-sm">
-                    Start tracking keywords to see ranking distribution.
+                    Start tracking keywords to see ranking changes.
                   </p>
                 </div>
               </div>
