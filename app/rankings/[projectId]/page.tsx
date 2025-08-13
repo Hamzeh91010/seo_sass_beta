@@ -51,6 +51,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Tag,
+  Hash,
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -58,7 +60,6 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import AnalyticsSummary from '@/components/rankings/analytics-summary';
-import { useRouter } from 'next/navigation';
 
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
@@ -725,10 +726,10 @@ export default function ProjectRankingsPage() {
                 </div>
               )}
             </CardContent>
-              {canEdit && (
+          </Card>
 
           {/* Pagination */}
-                    <Hash className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+          {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
