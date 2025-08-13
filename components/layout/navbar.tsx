@@ -41,6 +41,7 @@ import {
   X,
   LayoutDashboard,
   FolderOpen,
+  Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -69,6 +70,11 @@ export default function Navbar() {
       href: '/rankings',
       label: t('navigation.rankings'),
       icon: BarChart3,
+    },
+    {
+      href: '/projects/tags',
+      label: 'Tags',
+      icon: Tag,
     },
     {
       href: '/audits',

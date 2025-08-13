@@ -227,6 +227,12 @@ export default function ProjectKeywordsPage() {
                   Back to Projects
                 </Link>
               </Button>
+              <Button variant="outline" size="sm" className="flex-1" asChild>
+                <Link href={`/projects/${project.id}/tags`}>
+                  <Tag className="h-3 w-3 mr-1" />
+                  Tags
+                </Link>
+              </Button>
               <h1 className="text-3xl font-bold text-foreground">
                 Manage Keywords for {project?.name || `Project #${projectId}`}
               </h1>
