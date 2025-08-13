@@ -44,6 +44,7 @@ import {
   Clock,
   Zap,
   MapPin,
+  Tag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Project } from '@/lib/types';
@@ -345,6 +346,12 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
               <Link href={`/projects/${project.id}/audits`}>
                 <FileBarChart className="h-3 w-3 mr-1" />
                 Audits
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1" asChild>
+              <Link href={`/projects/${project.id}/tags`}>
+                <Tag className="h-3 w-3 mr-1" />
+                Tags
               </Link>
             </Button>
           </div>
