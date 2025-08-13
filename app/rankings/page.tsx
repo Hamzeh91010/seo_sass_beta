@@ -93,7 +93,7 @@ const ITEMS_PER_PAGE = 50;
 
 export default function RankingsRedirectPage() {
   const { t, i18n } = useTranslation();
-  const router = useRouter();
+  const { push } = useRouter();
 
   const isRTL = i18n.language === 'ar';
   
@@ -127,7 +127,7 @@ export default function RankingsRedirectPage() {
                   <Card 
                     key={project.id} 
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 group"
-                    onClick={() => router.push(`/rankings/${project.id}`)}
+                    onClick={() => push(`/rankings/${project.id}`)}
                   >
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg group-hover:text-primary transition-colors">

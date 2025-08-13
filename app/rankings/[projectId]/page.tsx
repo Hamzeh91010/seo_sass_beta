@@ -58,6 +58,7 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import AnalyticsSummary from '@/components/rankings/analytics-summary';
+import { useRouter } from 'next/navigation';
 
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
@@ -387,6 +388,15 @@ export default function ProjectRankingsPage() {
                     <Link href={`/projects/${projectId}/keywords`}>
                       <Settings className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       Manage Keywords
+                    </Link>
+                  </Button>
+                )}
+                
+                {canManageKeywords && (
+                  <Button variant="outline" asChild>
+                    <Link href={`/projects/${projectId}/tags`}>
+                      <Tag className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                      Manage Tags
                     </Link>
                   </Button>
                 )}

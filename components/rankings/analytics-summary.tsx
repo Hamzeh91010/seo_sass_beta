@@ -20,6 +20,7 @@ import {
 import {
   TrendingUp,
   TrendingDown,
+  Minus,
   Calendar,
   BarChart3,
   Loader2,
@@ -28,7 +29,6 @@ import {
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 
-import { Badge } from '@/components/ui/badge';
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
 
