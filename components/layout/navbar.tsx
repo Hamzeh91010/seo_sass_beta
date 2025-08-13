@@ -44,6 +44,10 @@ import {
   Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import useSWR from 'swr';
+
+// Data fetcher
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function Navbar() {
   const { t, i18n } = useTranslation();
@@ -55,6 +59,8 @@ export default function Navbar() {
 
   const isRTL = i18n.language === 'ar';
 
+  // Fetch user's projects for rankings dropdown
+  const { data: projects } = useSWR('/projects', fetcher);
   const navigationItems = [
     {
       href: '/dashboard',
@@ -65,11 +71,6 @@ export default function Navbar() {
       href: '/projects',
       label: t('navigation.projects'),
       icon: FolderOpen,
-    },
-    {
-      href: '/rankings',
-      label: t('navigation.rankings'),
-      icon: BarChart3,
     },
     {
       href: '/projects/tags',
@@ -149,6 +150,58 @@ export default function Navbar() {
                   </Link>
                 </NavigationMenuItem>
               ))}
+              
+              {/* Rankings Dropdown */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className={cn(
+                  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50",
+                  pathname.startsWith('/rankings') && "bg-accent text-accent-foreground"
+                )}>
+                  <BarChart3 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  {t('navigation.rankings')}
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-80 p-4">
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium leading-none mb-2">Select Project</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Choose a project to view its keyword rankings
+                      </p>
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {projects && projects.length > 0 ? (
+                        projects.map((project: any) => (
+                          <Link
+                            key={project.id}
+                            href={`/rankings/${project.id}`}
+                            className="block p-3 rounded-md hover:bg-accent transition-colors"
+                          >
+                            <div className="font-medium text-sm">{project.name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center mt-1">
+                              <Globe className="h-3 w-3 mr-1" />
+                              {project.url}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {project.keywords || 0} keywords • {project.search_engine}
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="text-center py-6">
+                          <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">No projects found</p>
+                          <Link
+                            href="/projects"
+                            className="text-xs text-primary hover:underline mt-1 inline-block"
+                          >
+                            Create your first project
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
               
               {user?.role === 'admin' && adminItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
@@ -295,6 +348,30 @@ export default function Navbar() {
                 {item.label}
               </Link>
             ))}
+            
+            {/* Mobile Rankings Section */}
+            <div className="px-3 py-2">
+              <div className="text-sm font-medium text-muted-foreground mb-2">Rankings</div>
+              {projects && projects.length > 0 ? (
+                projects.map((project: any) => (
+                  <Link
+                    key={project.id}
+                    href={`/rankings/${project.id}`}
+                    className="block rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center">
+                      <BarChart3 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                      {project.name}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No projects available
+                </div>
+              )}
+            </div>
             
             {user?.role === 'admin' && adminItems.map((item) => (
               <Link

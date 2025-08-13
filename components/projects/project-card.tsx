@@ -337,15 +337,15 @@ export default function ProjectCard({ project, onEdit, onDelete, onToggleStatus 
           {/* Actions */}
           <div className="flex space-x-2 pt-2">
             <Button variant="outline" size="sm" className="flex-1" asChild>
-              <Link href={`/projects/${project.id}/keywords`}>
-                <Search className="h-3 w-3 mr-1" />
-                Keywords
+              <Link href={`/rankings/${project.id}`}>
+                <BarChart3 className="h-3 w-3 mr-1" />
+                Rankings
               </Link>
             </Button>
             <Button variant="outline" size="sm" className="flex-1" asChild>
-              <Link href={`/projects/${project.id}/audits`}>
-                <FileBarChart className="h-3 w-3 mr-1" />
-                Audits
+              <Link href={`/projects/${project.id}/keywords`}>
+                <Search className="h-3 w-3 mr-1" />
+                Keywords
               </Link>
             </Button>
             <Button variant="outline" size="sm" className="flex-1" asChild>
