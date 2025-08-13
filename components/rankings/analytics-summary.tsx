@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
 
 // Data fetcher
 const fetcher = (url: string) => api.get(url).then(res => res.data);
@@ -191,7 +192,7 @@ export default function AnalyticsSummary({
         lightColor: 'bg-red-100 dark:bg-red-900/20',
         textColor: 'text-red-800 dark:text-red-400'
       }
-    ];
+    ].sort((a, b) => Math.abs(b.change) - Math.abs(a.change)); // Sort by largest change
   }, [summaryData]);
 
   const getChangeIcon = (change: number) => {
@@ -247,7 +248,7 @@ export default function AnalyticsSummary({
 
   return (
     <div className="mb-8 space-y-6">
-      {/* Summary Stats */}
+      {/* Summary Stats - Movement Tracking */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -487,7 +488,7 @@ export default function AnalyticsSummary({
           </CardContent>
         </Card>
 
-        {/* Ranking Distribution Comparison */}
+        {/* Ranking Distribution Comparison Table */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center">

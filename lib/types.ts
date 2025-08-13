@@ -141,6 +141,24 @@ export interface KeywordCreate {
   priority?: number;
 }
 
+// Tag Types
+export interface TagData {
+  id: number;
+  name: string;
+  color?: string;
+  keywords_count?: number;
+}
+
+export interface TagCreate {
+  name: string;
+  color?: string;
+}
+
+export interface TagUpdate {
+  name: string;
+  color?: string;
+}
+
 // -----------------------------
 // Transaction / Billing History
 // -----------------------------

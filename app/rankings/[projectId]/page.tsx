@@ -725,10 +725,10 @@ export default function ProjectRankingsPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
+              {canEdit && (
 
           {/* Pagination */}
-          {totalPages > 1 && (
+                    <Hash className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}

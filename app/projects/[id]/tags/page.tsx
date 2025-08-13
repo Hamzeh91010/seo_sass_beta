@@ -197,7 +197,7 @@ export default function TagsKeywordsPage() {
 
     setIsSubmitting(true);
     try {
-      await api.patch(`/projects/${projectId}/tags/${editingTag.id}`, {
+      await api.put(`/projects/${projectId}/tags/${editingTag.id}`, {
         name: tagName.trim(),
       });
       
@@ -246,7 +246,7 @@ export default function TagsKeywordsPage() {
 
     setIsSubmitting(true);
     try {
-      await api.post(`/projects/${projectId}/tags/${selectedTag.id}/keywords/bulk`, {
+      await api.post(`/projects/${projectId}/tags/${selectedTag.id}/keywords/save`, {
         keywords: keywordPills,
       });
       
@@ -312,7 +312,7 @@ export default function TagsKeywordsPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <Button variant="ghost" className="mb-4 p-0" asChild>
-                <Link href="/rankings">
+                <Link href={`/rankings/${projectId}`}>
                   <ArrowLeft className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                   Back to Rankings
                 </Link>
