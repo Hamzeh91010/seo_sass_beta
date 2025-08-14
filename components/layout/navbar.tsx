@@ -133,8 +133,8 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center">
-          <NavigationMenu>
-            <NavigationMenuList className="flex space-x-1">
+          <NavigationMenu className="relative">
+            <NavigationMenuList className="flex space-x-1 relative">
               {navigationItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
                   <Link href={item.href} legacyBehavior passHref>
@@ -160,7 +160,7 @@ export default function Navbar() {
                   <BarChart3 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                   {t('navigation.rankings')}
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
+                <NavigationMenuContent className="absolute top-full left-0 mt-1 w-80">
                   <div className="w-80 p-4">
                     <div className="mb-3">
                       <h4 className="text-sm font-medium leading-none mb-2">Select Project</h4>
@@ -212,7 +212,7 @@ export default function Navbar() {
                   <Tag className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                   Tags
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
+                <NavigationMenuContent className="absolute top-full left-0 mt-1 w-80">
                   <div className="w-80 p-4">
                     <div className="mb-3">
                       <h4 className="text-sm font-medium leading-none mb-2">Select Project</h4>
