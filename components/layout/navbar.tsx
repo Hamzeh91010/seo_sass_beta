@@ -203,6 +203,58 @@ export default function Navbar() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               
+              {/* Tags Dropdown */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className={cn(
+                  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50",
+                  pathname.includes('/tags') && "bg-accent text-accent-foreground"
+                )}>
+                  <Tag className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  Tags
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-80 p-4">
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium leading-none mb-2">Select Project</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Choose a project to manage its tags and keywords
+                      </p>
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {projects && projects.length > 0 ? (
+                        projects.map((project: any) => (
+                          <Link
+                            key={project.id}
+                            href={`/projects/${project.id}/tags`}
+                            className="block p-3 rounded-md hover:bg-accent transition-colors"
+                          >
+                            <div className="font-medium text-sm">{project.name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center mt-1">
+                              <Globe className="h-3 w-3 mr-1" />
+                              {project.url}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {project.keywords || 0} keywords • {project.search_engine}
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="text-center py-6">
+                          <Tag className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">No projects found</p>
+                          <Link
+                            href="/projects"
+                            className="text-xs text-primary hover:underline mt-1 inline-block"
+                          >
+                            Create your first project
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              
               {user?.role === 'admin' && adminItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
                   <Link href={item.href} legacyBehavior passHref>
@@ -362,6 +414,30 @@ export default function Navbar() {
                   >
                     <div className="flex items-center">
                       <BarChart3 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                      {project.name}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No projects available
+                </div>
+              )}
+            </div>
+            
+            {/* Mobile Tags Section */}
+            <div className="px-3 py-2">
+              <div className="text-sm font-medium text-muted-foreground mb-2">Tags</div>
+              {projects && projects.length > 0 ? (
+                projects.map((project: any) => (
+                  <Link
+                    key={project.id}
+                    href={`/projects/${project.id}/tags`}
+                    className="block rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center">
+                      <Tag className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                       {project.name}
                     </div>
                   </Link>
