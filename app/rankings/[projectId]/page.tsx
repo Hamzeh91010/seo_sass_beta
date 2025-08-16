@@ -79,7 +79,7 @@ interface KeywordRanking {
     prev_position: number | null;
     cur_position: number | null;
     position_difference: number | null;
-  }
+  };
   keyword: string;
   project: {
     id: number;
@@ -369,10 +369,8 @@ export default function ProjectRankingsPage() {
         <span className="text-xs">—</span>
       </div>
     );
-        </div>
-      );
-    }
   };
+  
   const getSearchEngineBadge = (engine: string) => {
     const colors = {
       Google: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
