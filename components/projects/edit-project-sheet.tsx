@@ -78,7 +78,7 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
   const isRTL = i18n.language === 'ar';
   
   // Fetch regions from API
-  const { data: regions, isLoading: regionsLoading } = useSWR('/regions', fetcher);
+  const { data: regionsData, isLoading: regionsLoading } = useSWR('/api/regions', fetcher);
 
   // Fetch project details for pre-filling
   const { data: fullProject, isLoading: isLoadingProject } = useSWR(
@@ -396,10 +396,10 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                     <SelectContent>
                       {regionsLoading ? (
                         <SelectItem value="" disabled>Loading regions...</SelectItem>
-                      ) : regions && regions.length > 0 ? (
-                        regions.map((region: any) => (
-                          <SelectItem key={region.code} value={region.name}>
-                            {region.name}
+                      ) : regionsData?.regions && regionsData.regions.length > 0 ? (
+                        regionsData.regions.map((regionName: string) => (
+                          <SelectItem key={regionName} value={regionName}>
+                            {regionName}
                           </SelectItem>
                         ))
                       ) : (

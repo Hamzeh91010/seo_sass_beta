@@ -68,6 +68,13 @@ export default function Navbar() {
     return [...projects].sort((a, b) => a.name.localeCompare(b.name));
   }, [projects]);
   
+  
+  // Sort projects by name for dropdowns
+  const sortedProjects = useMemo(() => {
+    if (!projects) return [];
+    return [...projects].sort((a, b) => a.name.localeCompare(b.name));
+  }, [projects]);
+  
   const navigationItems = [
     {
       href: '/dashboard',

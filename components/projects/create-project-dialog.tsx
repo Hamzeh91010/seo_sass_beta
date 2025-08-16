@@ -40,7 +40,7 @@ export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: Cr
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Fetch regions from API
-  const { data: regions, isLoading: regionsLoading } = useSWR('/regions', fetcher);
+  const { data: regionsData, isLoading: regionsLoading } = useSWR('/api/regions', fetcher);
   
   const [formData, setFormData] = useState<ProjectCreate>({
     name: '',
@@ -182,10 +182,10 @@ export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: Cr
                   <SelectContent>
                     {regionsLoading ? (
                       <SelectItem value="" disabled>Loading regions...</SelectItem>
-                    ) : regions && regions.length > 0 ? (
-                      regions.map((region: any) => (
-                        <SelectItem key={region.code} value={region.name}>
-                          {region.name}
+                    ) : regionsData?.regions && regionsData.regions.length > 0 ? (
+                      regionsData.regions.map((regionName: string) => (
+                        <SelectItem key={regionName} value={regionName}>
+                          {regionName}
                         </SelectItem>
                       ))
                     ) : (

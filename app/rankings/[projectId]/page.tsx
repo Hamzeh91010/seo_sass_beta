@@ -119,6 +119,9 @@ export default function ProjectRankingsPage() {
     fetcher
   );
 
+  // Fetch regions from API
+  const { data: regionsData, isLoading: regionsLoading } = useSWR('/api/regions', fetcher);
+
   // Fetch rankings with filters
   const rankingsUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -582,11 +585,23 @@ export default function ProjectRankingsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Regions</SelectItem>
-                      <SelectItem value="Global">Global</SelectItem>
-                      <SelectItem value="United States">United States</SelectItem>
-                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                      <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
-                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                      {regionsLoading ? (
+                        <SelectItem value="" disabled>Loading regions...</SelectItem>
+                      ) : regionsData?.regions && regionsData.regions.length > 0 ? (
+                        regionsData.regions.map((regionName: string) => (
+                          <SelectItem key={regionName} value={regionName}>
+                            {regionName}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="Global">Global</SelectItem>
+                          <SelectItem value="United States">United States</SelectItem>
+                          <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                          <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+                          <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
