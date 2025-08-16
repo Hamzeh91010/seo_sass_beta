@@ -286,30 +286,89 @@ export default function ProjectRankingsPage() {
 
   const getPositionChangeBadge = (ranking: KeywordRanking) => {
     const positionDifference = ranking.status?.position_difference;
+    const prevPosition = ranking.status?.prev_position;
+    const curPosition = ranking.status?.cur_position;
     
-    if (!positionDifference || positionDifference === 0) {
+    // Handle newly added keywords (both positions are null)
+    if (prevPosition === null && curPosition === null) {
       return (
-        <div className="flex items-center justify-center text-gray-500">
-          <Minus className="h-3 w-3 mr-1" />
-          <span className="text-xs">0</span>
+        <div className="flex flex-col items-center justify-center space-y-1">
+          <Badge variant="secondary" className="text-xs">
+            Newly Added
+          </Badge>
         </div>
       );
     }
     
-    if (positionDifference > 0) {
-      // Positive difference means improvement (moved up in rankings)
+    // Handle case where prev is null but current exists
+    if (prevPosition === null && curPosition !== null) {
       return (
-        <div className="flex items-center justify-center text-green-600">
-          <TrendingUp className="h-3 w-3 mr-1" />
-          <span className="text-xs font-medium">+{positionDifference}</span>
+        <div className="flex flex-col items-center justify-center space-y-1">
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-muted-foreground">None</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="font-bold text-foreground">#{curPosition}</span>
+          </div>
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs">
+            New Ranking
+          </Badge>
         </div>
       );
-    } else {
-      // Negative difference means decline (moved down in rankings)
+    }
+    
+    // Handle normal case with both positions
+    if (prevPosition !== null && curPosition !== null) {
       return (
-        <div className="flex items-center justify-center text-red-600">
-          <TrendingDown className="h-3 w-3 mr-1" />
-          <span className="text-xs font-medium">{positionDifference}</span>
+        <div className="flex flex-col items-center justify-center space-y-1">
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-muted-foreground">#{prevPosition}</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="font-bold text-foreground">#{curPosition}</span>
+          </div>
+          {positionDifference && positionDifference !== 0 ? (
+            <div className={`flex items-center ${positionDifference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {positionDifference > 0 ? (
+                <TrendingUp className="h-3 w-3 mr-1" />
+              ) : (
+                <TrendingDown className="h-3 w-3 mr-1" />
+              )}
+              <span className="text-xs font-medium">
+                {positionDifference > 0 ? '+' : ''}{positionDifference}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center text-gray-500">
+              <Minus className="h-3 w-3 mr-1" />
+              <span className="text-xs">0</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Handle case where current is null but prev exists (lost ranking)
+    if (prevPosition !== null && curPosition === null) {
+      return (
+        <div className="flex flex-col items-center justify-center space-y-1">
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-muted-foreground">#{prevPosition}</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="font-bold text-red-600">Lost</span>
+          </div>
+          <Badge variant="destructive" className="text-xs">
+            Not Ranking
+          </Badge>
+        </div>
+      );
+    }
+    
+    // Fallback case
+    return (
+      <div className="flex items-center justify-center text-gray-500">
+        <Minus className="h-3 w-3 mr-1" />
+        <span className="text-xs">—</span>
+      </div>
+    );
         </div>
       );
     }
