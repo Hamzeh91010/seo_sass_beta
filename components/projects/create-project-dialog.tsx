@@ -23,6 +23,11 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { ProjectCreate } from '@/lib/types';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
+
+// Data fetcher
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -33,6 +38,10 @@ interface CreateProjectDialogProps {
 export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: CreateProjectDialogProps) {
   const { t, i18n } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fetch regions from API
+  const { data: regions, isLoading: regionsLoading } = useSWR('/regions', fetcher);
+  
   const [formData, setFormData] = useState<ProjectCreate>({
     name: '',
     url: '',
@@ -165,17 +174,23 @@ export default function CreateProjectDialog({ open, onOpenChange, onSubmit }: Cr
                 <Select
                   value={formData.target_region}
                   onValueChange={(value) => setFormData({ ...formData, target_region: value })}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || regionsLoading}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Global">Global</SelectItem>
-                    <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
-                    <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
-                    <SelectItem value="United States">United States</SelectItem>
-                    <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                    {regionsLoading ? (
+                      <SelectItem value="" disabled>Loading regions...</SelectItem>
+                    ) : regions && regions.length > 0 ? (
+                      regions.map((region: any) => (
+                        <SelectItem key={region.code} value={region.name}>
+                          {region.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="Global">Global</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

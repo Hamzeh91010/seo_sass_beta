@@ -61,6 +61,13 @@ export default function Navbar() {
 
   // Fetch user's projects for rankings dropdown
   const { data: projects } = useSWR('/projects', fetcher);
+  
+  // Sort projects by name for dropdowns
+  const sortedProjects = useMemo(() => {
+    if (!projects) return [];
+    return [...projects].sort((a, b) => a.name.localeCompare(b.name));
+  }, [projects]);
+  
   const navigationItems = [
     {
       href: '/dashboard',
@@ -133,7 +140,7 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center">
-          <NavigationMenu className="relative">
+          <NavigationMenu>
             <NavigationMenuList className="flex space-x-1 relative">
               {navigationItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
@@ -163,8 +170,8 @@ export default function Navbar() {
                 <NavigationMenuContent>
                   <div className="w-48 p-2">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {projects && projects.length > 0 ? (
-                        projects.map((project: any) => (
+                      {sortedProjects && sortedProjects.length > 0 ? (
+                        sortedProjects.map((project: any) => (
                           <Link
                             key={project.id}
                             href={`/rankings/${project.id}`}
@@ -202,8 +209,8 @@ export default function Navbar() {
                 <NavigationMenuContent>
                   <div className="w-48 p-2">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {projects && projects.length > 0 ? (
-                        projects.map((project: any) => (
+                      {sortedProjects && sortedProjects.length > 0 ? (
+                        sortedProjects.map((project: any) => (
                           <Link
                             key={project.id}
                             href={`/projects/${project.id}/tags`}
@@ -378,8 +385,8 @@ export default function Navbar() {
             {/* Mobile Rankings Section */}
             <div className="px-3 py-2">
               <div className="text-sm font-medium text-muted-foreground mb-2">Rankings</div>
-              {projects && projects.length > 0 ? (
-                projects.map((project: any) => (
+              {sortedProjects && sortedProjects.length > 0 ? (
+                sortedProjects.map((project: any) => (
                   <Link
                     key={project.id}
                     href={`/rankings/${project.id}`}
@@ -402,8 +409,8 @@ export default function Navbar() {
             {/* Mobile Tags Section */}
             <div className="px-3 py-2">
               <div className="text-sm font-medium text-muted-foreground mb-2">Tags</div>
-              {projects && projects.length > 0 ? (
-                projects.map((project: any) => (
+              {sortedProjects && sortedProjects.length > 0 ? (
+                sortedProjects.map((project: any) => (
                   <Link
                     key={project.id}
                     href={`/projects/${project.id}/tags`}

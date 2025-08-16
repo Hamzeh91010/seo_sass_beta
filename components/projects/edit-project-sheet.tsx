@@ -50,6 +50,7 @@ import useSWR from 'swr';
 import { useMemo } from 'react';
 import { Badge } from '../ui/badge';
 import { useAuth } from '@/hooks/use-auth';
+import useSWR from 'swr';
 
 interface EditProjectSheetProps {
   open: boolean;
@@ -75,6 +76,9 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
   const [resendingInvite, setResendingInvite] = useState<number | null>(null);
 
   const isRTL = i18n.language === 'ar';
+  
+  // Fetch regions from API
+  const { data: regions, isLoading: regionsLoading } = useSWR('/regions', fetcher);
 
   // Fetch project details for pre-filling
   const { data: fullProject, isLoading: isLoadingProject } = useSWR(
@@ -384,17 +388,23 @@ export default function EditProjectSheet({ open, onOpenChange, project, onSubmit
                         handleSelectChange('target_region', value);
                       }
                     }}
-                    disabled={isSubmitting || !canEditProject}
+                    disabled={isSubmitting || !canEditProject || regionsLoading}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Global">Global</SelectItem>
-                      <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
-                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
-                      <SelectItem value="United States">United States</SelectItem>
-                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                      {regionsLoading ? (
+                        <SelectItem value="" disabled>Loading regions...</SelectItem>
+                      ) : regions && regions.length > 0 ? (
+                        regions.map((region: any) => (
+                          <SelectItem key={region.code} value={region.name}>
+                            {region.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="Global">Global</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
