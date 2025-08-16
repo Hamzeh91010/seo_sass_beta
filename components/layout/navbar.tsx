@@ -147,8 +147,8 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center">
-          <NavigationMenu>
-            <NavigationMenuList className="flex space-x-1 relative">
+          <NavigationMenu className="relative z-10">
+            <NavigationMenuList className="flex space-x-1">
               {navigationItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
                   <Link href={item.href} legacyBehavior passHref>
