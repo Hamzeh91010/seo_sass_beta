@@ -627,7 +627,7 @@ export default function ProjectRankingsPage() {
                             <ArrowUpDown className="ml-2 h-4 w-4" />
                           </Button>
                         </TableHead>
-                        <TableHead>Position Change</TableHead>
+                       <TableHead className="text-center">Position Change</TableHead>
                         <TableHead>Engine</TableHead>
                         <TableHead>Device</TableHead>
                         <TableHead>Region</TableHead>
@@ -663,7 +663,7 @@ export default function ProjectRankingsPage() {
                             {getPositionBadge(ranking)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-center min-w-[80px]">
+                            <div className="flex items-center justify-center">
                               {getPositionChangeBadge(ranking)}
                             </div>
                           </TableCell>
@@ -690,17 +690,17 @@ export default function ProjectRankingsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="max-w-[200px]">
+                            <div className="max-w-[250px]">
                               {ranking.url ? (
                                 <a
                                   href={ranking.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-primary hover:text-primary/80 text-xs truncate block underline"
+                                  className="text-primary hover:text-primary/80 text-xs truncate block underline hover:no-underline transition-all"
                                   title={ranking.url}
                                 >
-                                  {ranking.url.length > 30 
-                                    ? `${ranking.url.substring(0, 30)}...` 
+                                  {ranking.url.length > 40 
+                                    ? `${ranking.url.substring(0, 40)}...` 
                                     : ranking.url
                                   }
                                 </a>

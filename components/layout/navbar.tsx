@@ -161,14 +161,14 @@ export default function Navbar() {
                   {t('navigation.rankings')}
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="w-48 p-2 bg-popover border rounded-md shadow-md">
+                  <div className="w-48 p-2">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {projects && projects.length > 0 ? (
                         projects.map((project: any) => (
                           <Link
                             key={project.id}
                             href={`/rankings/${project.id}`}
-                            className="block p-2 rounded-md hover:bg-accent transition-colors text-sm"
+                            className="block p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-sm"
                           >
                             {project.name}
                           </Link>
@@ -200,14 +200,14 @@ export default function Navbar() {
                   Tags
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="w-48 p-2 bg-popover border rounded-md shadow-md">
+                  <div className="w-48 p-2">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {projects && projects.length > 0 ? (
                         projects.map((project: any) => (
                           <Link
                             key={project.id}
                             href={`/projects/${project.id}/tags`}
-                            className="block p-2 rounded-md hover:bg-accent transition-colors text-sm"
+                            className="block p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-sm"
                           >
                             {project.name}
                           </Link>
