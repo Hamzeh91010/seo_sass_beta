@@ -690,17 +690,17 @@ export default function ProjectRankingsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="max-w-[250px]">
+                            <div className="max-w-[200px]">
                               {ranking.url ? (
                                 <a
                                   href={ranking.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-primary hover:text-primary/80 text-xs truncate block"
+                                  className="text-primary hover:text-primary/80 text-xs truncate block underline"
                                   title={ranking.url}
                                 >
-                                  {ranking.url.length > 40 
-                                    ? `${ranking.url.substring(0, 40)}...` 
+                                  {ranking.url.length > 30 
+                                    ? `${ranking.url.substring(0, 30)}...` 
                                     : ranking.url
                                   }
                                 </a>

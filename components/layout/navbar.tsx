@@ -161,7 +161,7 @@ export default function Navbar() {
                   {t('navigation.rankings')}
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="w-48 p-2">
+                  <div className="w-48 p-2 bg-popover border rounded-md shadow-md">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {projects && projects.length > 0 ? (
                         projects.map((project: any) => (
@@ -170,7 +170,7 @@ export default function Navbar() {
                             href={`/rankings/${project.id}`}
                             className="block p-2 rounded-md hover:bg-accent transition-colors text-sm"
                           >
-                            <div className="font-medium truncate">{project.name}</div>
+                            {project.name}
                           </Link>
                         ))
                       ) : (
@@ -200,7 +200,7 @@ export default function Navbar() {
                   Tags
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="w-48 p-2">
+                  <div className="w-48 p-2 bg-popover border rounded-md shadow-md">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {projects && projects.length > 0 ? (
                         projects.map((project: any) => (
@@ -209,7 +209,7 @@ export default function Navbar() {
                             href={`/projects/${project.id}/tags`}
                             className="block p-2 rounded-md hover:bg-accent transition-colors text-sm"
                           >
-                            <div className="font-medium truncate">{project.name}</div>
+                            {project.name}
                           </Link>
                         ))
                       ) : (
