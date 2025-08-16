@@ -160,34 +160,24 @@ export default function Navbar() {
                   <BarChart3 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                   {t('navigation.rankings')}
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="absolute top-full left-0 mt-1 w-80">
-                  <div className="w-80 p-4">
+                <NavigationMenuContent>
+                  <div className="w-64 p-4">
                     <div className="mb-3">
                       <h4 className="text-sm font-medium leading-none mb-2">Select Project</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Choose a project to view its keyword rankings
-                      </p>
                     </div>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
                       {projects && projects.length > 0 ? (
                         projects.map((project: any) => (
                           <Link
                             key={project.id}
                             href={`/rankings/${project.id}`}
-                            className="block p-3 rounded-md hover:bg-accent transition-colors"
+                            className="block p-2 rounded-md hover:bg-accent transition-colors"
                           >
-                            <div className="font-medium text-sm">{project.name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center mt-1">
-                              <Globe className="h-3 w-3 mr-1" />
-                              {project.url}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {project.keywords || 0} keywords • {project.search_engine}
-                            </div>
+                            <div className="font-medium text-sm truncate">{project.name}</div>
                           </Link>
                         ))
                       ) : (
-                        <div className="text-center py-6">
+                        <div className="text-center py-4">
                           <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm text-muted-foreground">No projects found</p>
                           <Link
@@ -212,34 +202,24 @@ export default function Navbar() {
                   <Tag className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                   Tags
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="absolute top-full left-0 mt-1 w-80">
-                  <div className="w-80 p-4">
+                <NavigationMenuContent>
+                  <div className="w-64 p-4">
                     <div className="mb-3">
                       <h4 className="text-sm font-medium leading-none mb-2">Select Project</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Choose a project to manage its tags and keywords
-                      </p>
                     </div>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
                       {projects && projects.length > 0 ? (
                         projects.map((project: any) => (
                           <Link
                             key={project.id}
                             href={`/projects/${project.id}/tags`}
-                            className="block p-3 rounded-md hover:bg-accent transition-colors"
+                            className="block p-2 rounded-md hover:bg-accent transition-colors"
                           >
-                            <div className="font-medium text-sm">{project.name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center mt-1">
-                              <Globe className="h-3 w-3 mr-1" />
-                              {project.url}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {project.keywords || 0} keywords • {project.search_engine}
-                            </div>
+                            <div className="font-medium text-sm truncate">{project.name}</div>
                           </Link>
                         ))
                       ) : (
-                        <div className="text-center py-6">
+                        <div className="text-center py-4">
                           <Tag className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm text-muted-foreground">No projects found</p>
                           <Link

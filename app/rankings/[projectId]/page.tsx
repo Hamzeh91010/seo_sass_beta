@@ -284,6 +284,36 @@ export default function ProjectRankingsPage() {
     }
   };
 
+  const getPositionChangeBadge = (ranking: KeywordRanking) => {
+    const positionDifference = ranking.status?.position_difference;
+    
+    if (!positionDifference || positionDifference === 0) {
+      return (
+        <div className="flex items-center text-gray-500">
+          <Minus className="h-3 w-3 mr-1" />
+          <span className="text-xs">No change</span>
+        </div>
+      );
+    }
+    
+    if (positionDifference > 0) {
+      // Positive difference means improvement (moved up in rankings)
+      return (
+        <div className="flex items-center text-green-600">
+          <TrendingUp className="h-3 w-3 mr-1" />
+          <span className="text-xs font-medium">+{positionDifference}</span>
+        </div>
+      );
+    } else {
+      // Negative difference means decline (moved down in rankings)
+      return (
+        <div className="flex items-center text-red-600">
+          <TrendingDown className="h-3 w-3 mr-1" />
+          <span className="text-xs font-medium">{positionDifference}</span>
+        </div>
+      );
+    }
+  };
   const getSearchEngineBadge = (engine: string) => {
     const colors = {
       Google: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
@@ -597,6 +627,7 @@ export default function ProjectRankingsPage() {
                             <ArrowUpDown className="ml-2 h-4 w-4" />
                           </Button>
                         </TableHead>
+                        <TableHead>Change</TableHead>
                         <TableHead>Engine</TableHead>
                         <TableHead>Device</TableHead>
                         <TableHead>Region</TableHead>
@@ -610,6 +641,7 @@ export default function ProjectRankingsPage() {
                             <ArrowUpDown className="ml-2 h-4 w-4" />
                           </Button>
                         </TableHead>
+                        <TableHead>URL</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -629,6 +661,9 @@ export default function ProjectRankingsPage() {
                           </TableCell>
                           <TableCell>
                             {getPositionBadge(ranking)}
+                          </TableCell>
+                          <TableCell>
+                            {getPositionChangeBadge(ranking)}
                           </TableCell>
                           <TableCell>
                             {getSearchEngineBadge(ranking.search_engine)}
@@ -651,6 +686,21 @@ export default function ProjectRankingsPage() {
                               {/* {new Date(ranking.checked_at).toLocaleDateString()} */}
                               {ranking.checked_at ? new Date(ranking.checked_at).toLocaleDateString() : '—'}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {ranking.url ? (
+                              <a
+                                href={ranking.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80 text-xs truncate max-w-[200px] block"
+                                title={ranking.url}
+                              >
+                                {ranking.url}
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Dialog>
