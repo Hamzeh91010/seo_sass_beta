@@ -289,9 +289,9 @@ export default function ProjectRankingsPage() {
     
     if (!positionDifference || positionDifference === 0) {
       return (
-        <div className="flex items-center text-gray-500">
+        <div className="flex items-center justify-center text-gray-500">
           <Minus className="h-3 w-3 mr-1" />
-          <span className="text-xs">No change</span>
+          <span className="text-xs">0</span>
         </div>
       );
     }
@@ -299,7 +299,7 @@ export default function ProjectRankingsPage() {
     if (positionDifference > 0) {
       // Positive difference means improvement (moved up in rankings)
       return (
-        <div className="flex items-center text-green-600">
+        <div className="flex items-center justify-center text-green-600">
           <TrendingUp className="h-3 w-3 mr-1" />
           <span className="text-xs font-medium">+{positionDifference}</span>
         </div>
@@ -307,7 +307,7 @@ export default function ProjectRankingsPage() {
     } else {
       // Negative difference means decline (moved down in rankings)
       return (
-        <div className="flex items-center text-red-600">
+        <div className="flex items-center justify-center text-red-600">
           <TrendingDown className="h-3 w-3 mr-1" />
           <span className="text-xs font-medium">{positionDifference}</span>
         </div>
@@ -627,7 +627,7 @@ export default function ProjectRankingsPage() {
                             <ArrowUpDown className="ml-2 h-4 w-4" />
                           </Button>
                         </TableHead>
-                        <TableHead>Change</TableHead>
+                        <TableHead>Position Change</TableHead>
                         <TableHead>Engine</TableHead>
                         <TableHead>Device</TableHead>
                         <TableHead>Region</TableHead>
@@ -663,7 +663,9 @@ export default function ProjectRankingsPage() {
                             {getPositionBadge(ranking)}
                           </TableCell>
                           <TableCell>
-                            {getPositionChangeBadge(ranking)}
+                            <div className="flex items-center justify-center min-w-[80px]">
+                              {getPositionChangeBadge(ranking)}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {getSearchEngineBadge(ranking.search_engine)}
@@ -688,19 +690,24 @@ export default function ProjectRankingsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {ranking.url ? (
-                              <a
-                                href={ranking.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:text-primary/80 text-xs truncate max-w-[200px] block"
-                                title={ranking.url}
-                              >
-                                {ranking.url}
-                              </a>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
-                            )}
+                            <div className="max-w-[250px]">
+                              {ranking.url ? (
+                                <a
+                                  href={ranking.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:text-primary/80 text-xs truncate block"
+                                  title={ranking.url}
+                                >
+                                  {ranking.url.length > 40 
+                                    ? `${ranking.url.substring(0, 40)}...` 
+                                    : ranking.url
+                                  }
+                                </a>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Dialog>
