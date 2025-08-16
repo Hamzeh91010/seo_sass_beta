@@ -112,9 +112,6 @@ export default function ProjectRankingsPage() {
   const [isTracking, setIsTracking] = useState(false);
 
   const isRTL = i18n.language === 'ar';
-  
-  // Fetch regions from API
-  const { data: regions, isLoading: regionsLoading } = useSWR('/regions', fetcher);
 
   // Fetch project data
   const { data: project, error: projectError } = useSWR(
@@ -579,23 +576,17 @@ export default function ProjectRankingsPage() {
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Region</label>
-                  <Select value={region} onValueChange={setRegion} disabled={regionsLoading}>
+                  <Select value={region} onValueChange={setRegion}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Regions</SelectItem>
-                      {regionsLoading ? (
-                        <SelectItem value="" disabled>Loading regions...</SelectItem>
-                      ) : regions && regions.length > 0 ? (
-                        regions.map((region: any) => (
-                          <SelectItem key={region.code} value={region.name}>
-                            {region.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="Global">Global</SelectItem>
-                      )}
+                      <SelectItem value="Global">Global</SelectItem>
+                      <SelectItem value="United States">United States</SelectItem>
+                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                      <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
