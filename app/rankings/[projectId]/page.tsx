@@ -51,8 +51,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Tag,
-  Hash,
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -71,17 +69,18 @@ interface KeywordRanking {
   search_engine: 'Google' | 'Bing' | 'Yahoo';
   region: string;
   device: 'desktop' | 'mobile';
-  position: number | null;
+  position?: number | null;
   title: string | null;
-  url: string | null;
-  snippet: string | null;
-  checked_at: string;
-  status?: 'ranked' | 'not_ranked' | 'not_tracked' | 'queued' | 'pending';
-  keyword: {
-    id: number;
-    keyword: string;
-    tag?: string;
-  };
+  url?: string | null;
+  snippet?: string | null;
+  checked_at?: string;
+  status?: {
+    status: 'ranked' | 'not_ranked' | 'not_tracked' | 'queued' | 'pending';
+    prev_position: number | null;
+    cur_position: number | null;
+    position_difference: number | null;
+  }
+  keyword: string;
   project: {
     id: number;
     name: string;
@@ -130,7 +129,7 @@ export default function ProjectRankingsPage() {
     params.append('limit', ITEMS_PER_PAGE.toString());
     if (searchTerm) params.append('search', searchTerm);
     
-    return `/projects/${projectId}/rankings?${params.toString()}`;
+    return `/rankings/project/${projectId}?${params.toString()}`;
   }, [projectId, searchEngine, device, region, currentPage, searchTerm]);
 
   const { data: rankingsData, error, isLoading, mutate } = useSWR(
@@ -145,7 +144,8 @@ export default function ProjectRankingsPage() {
   // Fetch keyword history for dialog
   const { data: keywordHistory } = useSWR(
     selectedKeywordInfo
-      ? `/rankings/history?keyword_id=${selectedKeywordInfo.id}&project_id=${selectedKeywordInfo.projectId}`
+      // ? `/rankings/history?keyword_id=${selectedKeywordInfo.id}&project_id=${selectedKeywordInfo.projectId}`: null,
+      ? `/rankings/history?keyword_id=${selectedKeywordInfo.id}&project_id=${selectedKeywordInfo.projectId}&search_engine=${selectedKeywordInfo.engine}&device=${selectedKeywordInfo.device}&region=${selectedKeywordInfo.region}`
       : null,
     fetcher
   );
@@ -157,10 +157,12 @@ export default function ProjectRankingsPage() {
     if (sortBy === 'position') {
       // Custom sorting for position: ranked first, not ranked next, not tracked last
       sorted.sort((a, b) => {
-        const aPos = a.position;
-        const bPos = b.position;
-        const aStatus = a.status || (aPos ? 'ranked' : 'not_ranked');
-        const bStatus = b.status || (bPos ? 'ranked' : 'not_ranked');
+        
+        const aPos = a.position ?? null;
+        const bPos = b.position ?? null;
+        
+        const aStatus = (a as any).display_status || (aPos ? 'ranked' : 'not_ranking');
+        const bStatus = (b as any).display_status || (bPos ? 'ranked' : 'not_ranking');
         
         // Priority order: ranked > not_ranked > queued/pending > not_tracked
         const statusPriority = {
@@ -177,7 +179,6 @@ export default function ProjectRankingsPage() {
         if (aPriority !== bPriority) {
           return sortOrder === 'asc' ? aPriority - bPriority : bPriority - aPriority;
         }
-        
         // Within same status, sort by position
         if (aPos && bPos) {
           return sortOrder === 'asc' ? aPos - bPos : bPos - aPos;
@@ -196,8 +197,8 @@ export default function ProjectRankingsPage() {
 
         if (sortBy === 'keyword') {
           return sortOrder === 'asc'
-            ? a.keyword.keyword.localeCompare(b.keyword.keyword)
-            : b.keyword.keyword.localeCompare(a.keyword.keyword);
+            ? a.keyword.localeCompare(b.keyword)
+            : b.keyword.localeCompare(a.keyword);
         }
 
         if (sortBy === 'checked_at') {
@@ -219,32 +220,42 @@ export default function ProjectRankingsPage() {
 
     setIsTracking(true);
     try {
-      await api.post(`/projects/${projectId}/scrape`, {
+      const { data } = await api.post(`/projects/${projectId}/scrape`, {
         search_engines: [project.search_engine],
         region: project.target_region || 'Global',
         device: project.device_type || 'desktop',
       });
+      const { task_id } = data;
+            
+      const checkTaskStatus = async () => {
+        const taskStatusResponse = await api.get(`/task-status/${task_id}`);
       
-      toast.success('Manual tracking started successfully!');
-      
-      // Refresh rankings data
-      mutate();
-      
-      // Simulate tracking completion after some time (you might want to poll for actual status)
+        if (taskStatusResponse.data.status === "In Progress") {
+          setIsTracking(true);
+        } else if (taskStatusResponse.data.status === "Complete") {
+          setIsTracking(false);
+          mutate();       
+        } else if (taskStatusResponse.data.status === "Failed") {
+          toast.error('Scraping task failed');
+          setIsTracking(false);
+        }
+      };
+      const pollingInterval = setInterval(() => {
+        checkTaskStatus();
+      }, 3000);
       setTimeout(() => {
-        setIsTracking(false);
-        mutate();
-      }, 30000); // 30 seconds
-      
+        clearInterval(pollingInterval);  
+      }, 20000);
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || 'Failed to start manual tracking';
       toast.error(errorMessage);
       setIsTracking(false);
     }
   };
+    
 
   const getPositionBadge = (ranking: KeywordRanking) => {
-    const status = ranking.status || (ranking.position ? 'ranked' : 'not_ranked');
+    const status = ranking.status?.status || (ranking.position ? 'ranked' : 'not_ranked');
     
     switch (status) {
       case 'queued':
@@ -386,18 +397,9 @@ export default function ProjectRankingsPage() {
               <div className="flex gap-2">
                 {canManageKeywords && (
                   <Button variant="outline" asChild>
-                    <Link href={`/projects/${projectId}/keywords`}>
+                    <Link href={`/projects/${projectId}/tags`}>
                       <Settings className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       Manage Keywords
-                    </Link>
-                  </Button>
-                )}
-                
-                {canManageKeywords && (
-                  <Button variant="outline" asChild>
-                    <Link href={`/projects/${projectId}/tags`}>
-                      <Tag className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                      Manage Tags
                     </Link>
                   </Button>
                 )}
@@ -563,7 +565,7 @@ export default function ProjectRankingsPage() {
                   </p>
                   {canManageKeywords && (
                     <Button asChild>
-                      <Link href={`/projects/${projectId}/keywords`}>
+                      <Link href={`/projects/${projectId}/tags`}>
                         <Settings className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                         Add Keywords
                       </Link>
@@ -614,14 +616,15 @@ export default function ProjectRankingsPage() {
                     <TableBody>
                       {sortedRankings.map((ranking: KeywordRanking) => (
                         <TableRow key={ranking.id}>
+                        {/* // <TableRow key={ranking.keyword_id}> */}
                           <TableCell>
                             <div>
-                              <div className="font-medium">{ranking.keyword?.keyword || '-'}</div>
-                              {ranking.keyword.tag && (
+                              <div className="font-medium">{ranking.keyword || '-'}</div>
+                              {/* {ranking.keyword.tag && (
                                 <Badge variant="secondary" className="text-xs mt-1">
                                   {ranking.keyword.tag}
                                 </Badge>
-                              )}
+                              )} */}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -645,7 +648,8 @@ export default function ProjectRankingsPage() {
                           <TableCell>
                             <div className="flex items-center text-sm text-muted-foreground">
                               <Calendar className="h-3 w-3 mr-1" />
-                              {new Date(ranking.checked_at).toLocaleDateString()}
+                              {/* {new Date(ranking.checked_at).toLocaleDateString()} */}
+                              {ranking.checked_at ? new Date(ranking.checked_at).toLocaleDateString() : '—'}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -667,7 +671,7 @@ export default function ProjectRankingsPage() {
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl">
                                 <DialogHeader>
-                                  <DialogTitle>Ranking History: {ranking.keyword.keyword}</DialogTitle>
+                                  <DialogTitle>Ranking History: {ranking.keyword}</DialogTitle>
                                   <DialogDescription>
                                     Position tracking over time for this keyword
                                   </DialogDescription>
